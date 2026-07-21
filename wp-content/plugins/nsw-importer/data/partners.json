@@ -1,0 +1,63 @@
+[
+  {
+    "id": "world-bank",
+    "type": "international",
+    "name": {
+      "sq": "Banka Botërore / IFC",
+      "en": "World Bank / IFC"
+    },
+    "description": {
+      "sq": "Financuesi kryesor i projektit NSW përmes një kredie IBRD prej 5.9 milionë USD. Ofron mbështetje teknike dhe ekspertizë ndërkombëtare për zbatimin e suksesshëm të projektit.",
+      "en": "The primary funder of the NSW project through a 5.9 million USD IBRD loan. Provides technical support and international expertise for the successful implementation of the project."
+    },
+    "color": "#1a73e8",
+    "website": "https://www.worldbank.org",
+    "logo": "/partners/logo-wb.svg"
+  },
+  {
+    "id": "cefta",
+    "type": "international",
+    "name": {
+      "sq": "CEFTA",
+      "en": "CEFTA"
+    },
+    "description": {
+      "sq": "Marrëveshja e Tregtisë së Lirë të Evropës Qendrore. CEFTA promovon integrimin tregtar rajonal dhe lehtëson tregtinë ndërmjet vendeve anëtare, duke përfshirë Shqipërinë.",
+      "en": "The Central European Free Trade Agreement. CEFTA promotes regional trade integration and facilitates trade between member countries, including Albania."
+    },
+    "color": "#0d47a1",
+    "website": "https://cefta.int",
+    "logo": "/partners/logo-cefta.png",
+    "logoBg": true
+  },
+  {
+    "id": "ministry-finance",
+    "type": "government",
+    "name": {
+      "sq": "Ministria e Ekonomisë dhe Inovacionit",
+      "en": "Ministry of Economy and Innovation"
+    },
+    "description": {
+      "sq": "Ministria drejtuese e projektit NSW. Mbikëqyr politikat tregtare dhe financiare të Shqipërisë dhe koordinon zbatimin e reformave për lehtësimin e tregtisë.",
+      "en": "The lead ministry for the NSW project. Oversees Albania's trade and financial policies and coordinates the implementation of trade facilitation reforms."
+    },
+    "color": "#1565c0",
+    "website": "https://ekonomia.al/",
+    "logo": "/partners/logo-ministry.png"
+  },
+  {
+    "id": "nais",
+    "type": "government",
+    "name": {
+      "sq": "AKSHI — Agjencia Kombëtare e Shoqërisë së Informacionit",
+      "en": "NAIS — National Agency for Information Society"
+    },
+    "description": {
+      "sq": "Operatori i Dritares së Vetme Kombëtare. AKSHI është përgjegjëse për zhvillimin, mirëmbajtjen dhe operimin e platformës NSW, si dhe për infrastrukturën dixhitale të qeverisë shqiptare.",
+      "en": "The operator of the National Single Window. NAIS is responsible for the development, maintenance, and operation of the NSW platform, as well as the digital infrastructure of the Albanian government."
+    },
+    "color": "#283593",
+    "website": "https://akshi.al",
+    "logo": "/partners/logo-nais.png"
+  }
+]

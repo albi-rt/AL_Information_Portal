@@ -1,0 +1,40 @@
+# === WordPress core ===
+/wp-admin/
+/wp-includes/
+/wp-*.php
+/index.php
+/xmlrpc.php
+/license.txt
+/readme.html
+/.htaccess
+/local-xdebuginfo.php
+
+# === Config & secrets ===
+wp-config.php
+
+# === Uploads & caches ===
+wp-content/uploads/
+wp-content/upgrade/
+wp-content/cache/
+
+# === Bundled / third-party themes (un-ignore your own below) ===
+wp-content/themes/twentytwentythree/
+wp-content/themes/twentytwentyfive/
+wp-content/themes/hello-elementor/
+
+# === Third-party plugins (un-ignore your own below) ===
+wp-content/plugins/*
+!wp-content/plugins/index.php
+!wp-content/plugins/nsw-importer/
+
+# --- Our own code (tracked) ---
+# Theme: wp-content/themes/nsw-theme/ (tracked — not in the ignore list above)
+# Plugin: wp-content/plugins/nsw-importer/ (un-ignored above)
+# Polylang stays ignored — reinstall it from the WP plugin directory.
+
+# === OS / editor ===
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/

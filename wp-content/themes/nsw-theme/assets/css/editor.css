@@ -1,0 +1,30 @@
+/* Block / Site editor — EDITOR-ONLY overrides.
+ *
+ * The full design system (tokens on :root, layout, components, fonts) is loaded
+ * from main.css, which setup.php registers alongside this file via
+ * add_editor_style(). WordPress scopes main.css's :root/body to
+ * .editor-styles-wrapper, so tokens resolve and the editor matches the front
+ * end. Keep this file limited to things that only make sense while editing.
+ */
+
+/* Scroll-reveal is driven by IntersectionObserver in main.js, which does not
+   run in the editor — force the "revealed" state so content is visible. */
+.editor-styles-wrapper [data-reveal] {
+	opacity: 1 !important;
+	transform: none !important;
+	transition: none !important;
+}
+
+/* Accordions/details are opened by JS on the front end; show their content so
+   it can be edited. */
+.editor-styles-wrapper details:not([open]) > *:not(summary) {
+	display: revert;
+}
+
+/* Dynamic (server-rendered) NSW blocks have no inner editable content, and
+   their rendered links/buttons would otherwise swallow clicks — making the
+   block hard to select. Let clicks fall through to the block wrapper so the
+   whole section selects (and can be moved/removed) in one click. */
+.editor-styles-wrapper .nsw-ssr-preview > * {
+	pointer-events: none;
+}

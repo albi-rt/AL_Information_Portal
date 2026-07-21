@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 308 64" fill="none" role="img" aria-label="NSW Albania - National Single Window">
+  <title>NSW Albania - National Single Window</title>
+
+  <!-- ============ SHIELD ICON ============ -->
+  <!-- Shield base — institutional navy -->
+  <path d="M8 2 L44 2 Q51 2 51 9 L51 38 L27 58 L3 38 L3 9 Q3 2 10 2 Z" fill="#5C1A6E"/>
+
+  <!-- Red accent stripe — bottom of shield (Albanian flag reference) -->
+  <path d="M3 41 L51 41 L27 58 Z" fill="#C8102E"/>
+
+  <!-- Inner highlight edge for depth -->
+  <path d="M8 2 L44 2 Q51 2 51 9 L51 38 L27 58 L3 38 L3 9 Q3 2 10 2 Z"
+        fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="1.5"/>
+
+  <!-- === Agency nodes (3 inputs = multiple CBRAs) === -->
+  <circle cx="12"  cy="17" r="3.5" fill="white"/>
+  <circle cx="27"  cy="11" r="3.5" fill="white"/>
+  <circle cx="42"  cy="17" r="3.5" fill="white"/>
+
+  <!-- === Convergence lines → single window === -->
+  <line x1="12" y1="20.5" x2="27" y2="37"
+        stroke="rgba(255,255,255,0.50)" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="27" y1="14.5" x2="27" y2="37"
+        stroke="rgba(255,255,255,0.50)" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="42" y1="20.5" x2="27" y2="37"
+        stroke="rgba(255,255,255,0.50)" stroke-width="1.6" stroke-linecap="round"/>
+
+  <!-- === Central "Single Window" node === -->
+  <circle cx="27" cy="37" r="5.5" fill="white"/>
+  <circle cx="27" cy="37" r="2.5" fill="#5C1A6E"/>
+
+  <!-- ============ PRIMARY TEXT ============ -->
+
+  <!-- NSW — bold wordmark -->
+  <text x="66" y="44"
+    font-family="'Arial Black','Helvetica Neue',Arial,sans-serif"
+    font-size="38" font-weight="900"
+    fill="#5C1A6E" letter-spacing="-0.5">NSW</text>
+
+  <!-- Thin rule beneath NSW -->
+  <line x1="66" y1="50" x2="156" y2="50" stroke="#D1D5DB" stroke-width="1"/>
+
+  <!-- ALBANIA — tracked subtext in Albanian red -->
+  <text x="67" y="61"
+    font-family="Arial,'Helvetica Neue',sans-serif"
+    font-size="10.5" font-weight="700"
+    letter-spacing="4.2"
+    fill="#C8102E">ALBANIA</text>
+
+  <!-- ============ VERTICAL DIVIDER ============ -->
+  <line x1="167" y1="12" x2="167" y2="54"
+        stroke="#D1D5DB" stroke-width="1.5"/>
+
+  <!-- ============ SUBTITLE TEXT ============ -->
+  <!-- English: National Single Window -->
+  <text x="178" y="33"
+    font-family="Arial,'Helvetica Neue',sans-serif"
+    font-size="9.5" fill="#6B7280">National Single Window</text>
+
+  <!-- Albanian: Dritarja Kombëtare e Vetme (italic) -->
+  <text x="178" y="48"
+    font-family="Arial,'Helvetica Neue',sans-serif"
+    font-size="9" font-style="italic"
+    fill="#9CA3AF">Dritarja Kombëtare e Vetme</text>
+</svg>

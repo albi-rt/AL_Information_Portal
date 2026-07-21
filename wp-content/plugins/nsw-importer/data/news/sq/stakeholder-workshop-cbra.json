@@ -1,0 +1,16 @@
+{
+  "slug": "stakeholder-workshop-cbra",
+  "title": "Punëtoria me Përfaqësuesit e Agjencive të Kontrollit Rregullator Kufitar",
+  "date": "2025-03-20",
+  "author": "Ekipi NSW",
+  "category": "events",
+  "excerpt": "Një punëtori e rëndësishme u mbajt me përfaqësuesit e tetë agjencive të kontrollit rregullator kufitar për të diskutuar harmonizimin e të dhënave dhe kërkesat e integrimit.",
+  "content": [
+    "Më 20 mars 2025, ekipi i projektit të Dritares Kombëtare të Vetme organizoi një punëtori gjithëpërfshirëse me përfaqësuesit e tetë Agjencive të Kontrollit Rregullator Kufitar (CBRA) që do të integrohen në sistemin NSW. Punëtoria u mbajt në ambientet e Ministrisë së Financave dhe Ekonomisë dhe u fokusua në harmonizimin e të dhënave dhe kërkesat teknike të ndërveprimit.",
+    "Gjatë punëtorisë, çdo agjenci prezantoi proceset e saj aktuale të lejimit dhe dokumentacionit, duke identifikuar fushat ku dixhitalizimi mund të sjellë përfitime të menjëhershme. Diskutimet u përqendruan në standardizimin e formateve të të dhënave, eliminimin e dokumenteve të dyfishta dhe krijimin e një katalogu të përbashkët të kërkesave rregullatore.",
+    "Ekspertët teknikë të AKSHI-t prezantuan arkitekturën e propozuar të sistemit NSW dhe mënyrën se si ai do të integrohet me sistemin ASYCUDA World. Agjencitë patën mundësinë të japin komente dhe sugjerime për ndërfaqen e përdoruesit dhe rrjedhën e punës që do të përdoret për përpunimin e kërkesave.",
+    "Një nga arritjet kryesore të punëtorisë ishte dakordësia për krijimin e grupeve teknike të punës për çdo agjenci, të cilat do të punojnë ngushtë me ekipin e projektit NSW gjatë fazës së zhvillimit. Kjo qasje bashkëpunuese siguron që sistemi përfundimtar do të plotësojë nevojat reale të të gjitha palëve të interesuara.",
+    "Punëtoria u mbyll me një plan veprimi të qartë dhe afate kohore për fazat e ardhshme të konsultimit teknik, duke vendosur bazat për një zbatim të suksesshëm të NSW-së."
+  ],
+  "relatedArticles": ["nsw-project-launched", "technical-architecture-blueprint"]
+}

@@ -1,0 +1,353 @@
+<?php
+/**
+ * UI microcopy (en) — interface copy for hero/section text and a few option
+ * lists, consumed by nsw_theme_t() / nsw_theme_get_content(). Developer-managed
+ * translation data (converted from the former content-en.json).
+ *
+ * @package NSW_Theme
+ */
+
+return array (
+  'metadata' => 
+  array (
+    'title' => 'Albania National Single Window',
+    'description' => 'The single electronic entry point for all cross-border trade regulatory requirements in Albania',
+  ),
+  'common' =>
+  array (
+    'learnMore' => 'Learn More',
+    'contactUs' => 'Contact Us',
+    'readMore' => 'Read more',
+    'seeAll' => 'See all',
+    'viewAll' => 'View all',
+    'download' => 'Download',
+    'search' => 'Search',
+    'submit' => 'Submit',
+    'comingSoon' => 'Coming Soon',
+    'backToHome' => 'Back to Home',
+    'share' => 'Share',
+    'previous' => 'Previous',
+    'next' => 'Next',
+    'all' => 'All',
+    'upcoming' => 'Upcoming',
+    'past' => 'Past',
+    'loadMore' => 'Load more',
+    'filterBy' => 'Filter by',
+    'categories' => 'Categories',
+    'relatedArticles' => 'Related Articles',
+    'publishedOn' => 'Published on',
+    'by' => 'by',
+    'announcements' => 'Announcements',
+    'updates' => 'Updates',
+    'language' => 'Language',
+  ),
+  'hero' => 
+  array (
+    'title' => 'Transforming Albanian Trade',
+    'subtitle' => 'The National Single Window (NSW) — the single electronic entry point for all cross-border trade regulatory requirements in Albania.',
+    'cta1' => 'Learn More',
+    'cta2' => 'Contact Us',
+  ),
+  'stats' => 
+  array (
+    'agencies' => 'Participating Agencies',
+    'costReduction' => 'Cost Reduction',
+    'euAlignment' => 'EU Alignment',
+    'documents' => 'Digitized Documents',
+  ),
+  'whatIsNsw' => 
+  array (
+    'title' => 'What is the National Single Window?',
+    'description' => 'The National Single Window (NSW) is an electronic platform that enables traders to submit their data only once through a single entry point. The NSW automatically distributes this data to all relevant regulatory agencies, eliminating multiple submissions and streamlining the cross-border trade process.',
+    'description2' => 'Supported by the World Bank and operated by NAIS (National Agency for Information Society), the NSW represents a decisive step toward modernizing Albania\'s trade infrastructure and aligning with European Union standards.',
+    'feature1Title' => 'Single Submission',
+    'feature1Desc' => 'Submit your data just once. The NSW automatically distributes it to the relevant agencies.',
+    'feature2Title' => 'Transparency',
+    'feature2Desc' => 'Track the status of your application in real-time, at every step of the process.',
+    'feature3Title' => 'Speed',
+    'feature3Desc' => 'Parallel processing by regulatory agencies, significantly reducing clearance time.',
+  ),
+  'agenciesSection' => 
+  array (
+    'title' => 'Participating Agencies',
+    'subtitle' => '14 Cross-Border Regulatory Agencies connected to the NSW',
+    'seeAll' => 'See all agencies',
+  ),
+  'newsSection' => 
+  array (
+    'title' => 'Latest News',
+    'subtitle' => 'Stay informed about the latest NSW developments',
+    'seeAll' => 'See all news',
+  ),
+  'partnersSection' => 
+  array (
+    'title' => 'Our Partners',
+    'subtitle' => 'The NSW is supported by international partners and government institutions',
+  ),
+  'ctaSection' => 
+  array (
+    'title' => 'Have questions about NSW?',
+    'description' => 'Our team is ready to help you with any questions about the National Single Window.',
+    'button' => 'Contact Us',
+  ),
+  'footer' => 
+  array (
+    'description' => 'Albania\'s National Single Window — The electronic platform for facilitating cross-border trade.',
+    'quickLinks' => 'Quick Links',
+    'resources' => 'Resources',
+    'contactInfo' => 'Contact Info',
+    'address' => 'Rruga "Dëshmorët e 4 Shkurtit", Tirana, Albania',
+    'email' => 'info@nsw.al',
+    'hours' => 'Monday – Friday, 08:00–16:00',
+    'copyright' => '© {year} National Single Window — Albania. All rights reserved.',
+    'fundingAck' => 'Funded by the World Bank (IBRD) in support of trade facilitation in Albania.',
+    'privacy' => 'Privacy Policy',
+    'terms' => 'Terms of Service',
+  ),
+  'aboutPage' => 
+  array (
+    'title' => 'About the National Single Window',
+    'subtitle' => 'Modernizing cross-border trade in Albania',
+    'whatIsNswTitle' => 'What is NSW?',
+    'whatIsNsw1' => 'The National Single Window (NSW) is an electronic system that enables parties involved in trade and transport to submit standardized information and documents at a single entry point to fulfill all regulatory requirements related to import, export, and transit.',
+    'whatIsNsw2' => 'Through the NSW, traders no longer need to physically visit multiple government agencies or submit the same data multiple times. The system collects information once and automatically distributes it to the relevant agencies for processing.',
+    'whatIsNsw3' => 'Albania\'s NSW is operated by NAIS (National Agency for Information Society) under the oversight of the Ministry of Economy and Innovation, with financial support from the World Bank.',
+    'whatIsNsw4' => 'The project aims to significantly improve the efficiency of trade procedures, reduce costs for businesses, and support Albania on its path toward European Union membership.',
+    'visionTitle' => 'Vision',
+    'vision' => 'An Albania where cross-border trade is fast, transparent, and fully digital — contributing to economic growth and European integration.',
+    'missionTitle' => 'Mission',
+    'mission' => 'To digitize and simplify the cross-border trade process by providing a single electronic entry point for all regulatory requirements, reducing time, costs, and bureaucratic barriers.',
+    'legalBasisTitle' => 'Legal Basis',
+    'legalBasis' => 'The NSW is based on the following legal and regulatory framework:',
+    'legalItem1' => 'Law on the National Single Window of the Republic of Albania',
+    'legalItem2' => 'UN/CEFACT Recommendation No. 33 — the "once-only" principle',
+    'legalItem3' => 'WTO Trade Facilitation Agreement (Article 10.4)',
+    'legalItem4' => 'EU Customs acquis — alignment with European standards',
+    'governanceTitle' => 'Governance Structure',
+    'governanceSubtitle' => 'The NSW is governed through three institutional layers:',
+    'govLayer1Title' => 'Consultative Layer',
+    'govLayer1Desc' => 'Private sector, regulatory agencies (CBRAs), domain experts — provide advice and feedback',
+    'govLayer2Title' => 'Decision Layer',
+    'govLayer2Desc' => 'NSW Steering Committee — makes strategic decisions and oversees progress',
+    'govLayer3Title' => 'Execution Layer',
+    'govLayer3Desc' => 'NSW Operator (NAIS/AKSHI) — implements and maintains the platform',
+    'timelineTitle' => 'Project Timeline',
+    'timeline1Date' => '2023',
+    'timeline1Event' => 'Signing of the World Bank agreement for NSW financing',
+    'timeline2Date' => '2024',
+    'timeline2Event' => 'Project implementation start and Steering Committee establishment',
+    'timeline3Date' => '2024',
+    'timeline3Event' => 'Technical architecture completion and development start',
+    'timeline4Date' => '2025',
+    'timeline4Event' => 'Pilot phase with initial regulatory agencies',
+    'timeline5Date' => '2026',
+    'timeline5Event' => 'Full NSW launch with all 8 regulatory agencies',
+    'fundingTitle' => 'Funding',
+    'fundingDesc' => 'The NSW project is financed in accordance with the World Bank Procurement Regulations for IPF Borrowers, under the Western Balkans Trade and Transport Facilitation Project – Albania. The project is financed through Loan No. IBRD 89330, and the procurement process was based on Request for Proposals (RFP) No. WBTTF-ALB-112CDEF. This financing supports the development of the NSW platform, capacity building, and technical assistance.',
+    'euTitle' => 'EU Alignment',
+    'euDesc' => 'As an EU candidate country, Albania is actively working to align its regulatory framework with European standards. The NSW is a key component of this effort, ensuring that Albania\'s cross-border trade procedures are compatible with the EU customs acquis and international best practices.',
+  ),
+  'howItWorksPage' => 
+  array (
+    'title' => 'How NSW Works',
+    'subtitle' => 'The step-by-step process of cross-border trade through NSW',
+    'stepsTitle' => 'The NSW Process in 8 Steps',
+    'step1Title' => 'Registration',
+    'step1Desc' => 'The trader registers on the NSW platform and creates their account.',
+    'step2Title' => 'Application Submission',
+    'step2Desc' => 'The trader submits the application (LPCO) only once through the NSW.',
+    'step3Title' => 'Automatic Distribution',
+    'step3Desc' => 'The NSW automatically distributes the data to the relevant regulatory agencies.',
+    'step4Title' => 'Parallel Processing',
+    'step4Desc' => 'Regulatory agencies (CBRAs) process the application simultaneously.',
+    'step5Title' => 'Inspection (if needed)',
+    'step5Desc' => 'If inspection is required, the NSW coordinates the process between agencies.',
+    'step6Title' => 'Approval or Rejection',
+    'step6Desc' => 'The decision is communicated through the NSW — approval, rejection, or request for additional information.',
+    'step7Title' => 'Customs Notification',
+    'step7Desc' => 'Clearance information is automatically sent to Customs (ASYCUDA).',
+    'step8Title' => 'Goods Release',
+    'step8Desc' => 'Goods are released for import, export, or transit after all procedures are completed.',
+    'onceOnlyTitle' => 'The "Once-Only" Principle',
+    'onceOnlySubtitle' => 'How NSW changes the trade process',
+    'beforeTitle' => 'Before NSW',
+    'beforeItems' => 
+    array (
+      0 => 'Trader visits 5+ agencies physically',
+      1 => 'Submits the same data multiple times',
+      2 => 'Paper documents, long waiting times',
+      3 => 'No transparency on status',
+      4 => 'Process takes weeks',
+    ),
+    'afterTitle' => 'With NSW',
+    'afterItems' => 
+    array (
+      0 => 'Single electronic submission',
+      1 => 'NSW distributes data automatically',
+      2 => 'Digital process, no paper',
+      3 => 'Real-time status tracking',
+      4 => 'Clearance within days',
+    ),
+    'lpcoTitle' => 'What is an LPCO?',
+    'lpcoDesc' => 'LPCO represents four types of regulatory documents required for cross-border trade:',
+    'lpcoL' => 'License — Permission for specific trade activities',
+    'lpcoP' => 'Permit — Authorization for importing/exporting certain goods',
+    'lpcoC' => 'Certificate — Verification of compliance with standards',
+    'lpcoO' => 'Other — Other regulatory documents',
+    'integrationTitle' => 'Integration with Existing Systems',
+    'integrationDesc' => 'The NSW integrates with existing government systems, including ASYCUDA World (customs system) and e-Albania, ensuring a seamless flow of information between all parties.',
+  ),
+  'agenciesPage' => 
+  array (
+    'title' => 'Participating Agencies',
+    'subtitle' => '14 Cross-Border Regulatory Agencies (CBRAs) connected to the NSW',
+  ),
+  'partnersPage' => 
+  array (
+    'title' => 'Partners & Stakeholders',
+    'subtitle' => 'International and domestic collaboration for the success of NSW',
+    'internationalTitle' => 'International Partners',
+    'governmentTitle' => 'Government Partners',
+    'privateSectorTitle' => 'Private Sector',
+    'privateSectorDesc' => 'The NSW serves a wide range of private sector actors involved in cross-border trade:',
+    'privateSectorActors' => 
+    array (
+      0 => 'Importers and Exporters — primary beneficiaries of streamlined processes',
+      1 => 'Customs Brokers — professional representatives of traders',
+      2 => 'Carriers and Freight Forwarders — logistics operators',
+      3 => 'Chambers of Commerce — representatives of business interests',
+    ),
+    'privateSectorBenefits' => 'The private sector benefits from the NSW through reduced operational costs, increased transparency, and faster trade processes.',
+  ),
+  'documentsPage' => 
+  array (
+    'title' => 'Documents & Guides',
+    'subtitle' => 'Resources and materials for NSW users',
+    'note' => 'More documents will be added as the NSW platform becomes operational.',
+    'legal' => 'Legal Documents',
+    'guides' => 'User Guides',
+    'technical' => 'Technical Documents',
+    'templates' => 'Templates & Forms',
+  ),
+  'eventsPage' => 
+  array (
+    'title' => 'Events',
+    'subtitle' => 'Activities and events related to NSW',
+    'upcomingTitle' => 'Upcoming Events',
+    'pastTitle' => 'Past Events',
+    'workshop' => 'Workshop',
+    'conference' => 'Conference',
+    'training' => 'Training',
+  ),
+  'supportPage' => 
+  array (
+    'title' => 'Support Dashboard',
+    'subtitle' => 'Technical support system for NSW users',
+    'comingSoon' => 'Coming Soon',
+    'description' => 'The NSW Support Dashboard will offer a full range of support services for all platform users.',
+    'features' => 
+    array (
+      'title' => 'What the Support Dashboard Will Offer',
+      'feature1' => 'Submit and track support requests',
+      'feature2' => 'Real-time status updates on your request',
+      'feature3' => 'Chat with the support team',
+      'feature4' => 'Notification system',
+      'feature5' => 'History of previous requests',
+    ),
+    'meanwhile' => 'In the meantime, please use the Contact page for any questions or issues.',
+  ),
+  'contactPage' => 
+  array (
+    'title' => 'Contact Us',
+    'subtitle' => 'We\'re here to help you with any questions about NSW',
+    'formTitle' => 'Send a Message',
+    'infoTitle' => 'Contact Information',
+    'form' => 
+    array (
+      'fullName' => 'Full Name',
+      'email' => 'Email Address',
+      'organization' => 'Organization / Company',
+      'category' => 'Category',
+      'categoryOptions' => 
+      array (
+        'general' => 'General Inquiry',
+        'lpco' => 'LPCO Process',
+        'registration' => 'Registration',
+        'payment' => 'Payment',
+        'technical' => 'Technical Issue',
+        'feedback' => 'Feedback',
+        'other' => 'Other',
+      ),
+      'agency' => 'Related Agency',
+      'agencyOptions' => 
+      array (
+        'general' => 'General',
+        'customs' => 'Customs',
+        'nfa' => 'NFA (National Food Authority)',
+        'navpp' => 'NAVPP (Veterinary & Plant Protection)',
+        'mhsp' => 'MHSP (Ministry of Health)',
+        'nadmd' => 'NADMD (Drugs & Medical Devices)',
+        'nanr' => 'NANR (Natural Resources)',
+        'stii' => 'STII (Technical Inspectorate)',
+        'moe' => 'MoE (Ministry of Environment)',
+        'seca' => 'SECA (State Export Control Authority)',
+        'sess' => 'SESS (State Entity of Seeds and Seedlings)',
+        'iph' => 'IPH (Institute of Public Health)',
+        'nich' => 'NICH (National Institute of Cultural Heritage)',
+        'mie' => 'MIE (Ministry of Infrastructure and Energy)',
+        'nea' => 'NEA (National Environment Agency)',
+        'other' => 'Other',
+      ),
+      'subject' => 'Subject',
+      'message' => 'Message',
+      'attachment' => 'Attachment (Optional, max 10MB)',
+      'privacy' => 'I accept the privacy policy and the processing of my data',
+      'submit' => 'Send Message',
+      'success' => 'Your message was sent successfully! We will contact you as soon as possible.',
+      'error' => 'An error occurred. Please try again.',
+      'errors' => 
+      array (
+        'fullName' => 'Name must be at least 2 characters',
+        'email' => 'Please enter a valid email address',
+        'category' => 'Please select a category',
+        'subject' => 'Subject must be at least 3 characters',
+        'message' => 'Message must be at least 10 characters',
+        'privacy' => 'You must accept the privacy policy',
+      ),
+    ),
+    'info' => 
+    array (
+      'address' => 'Rruga "Dëshmorët e 4 Shkurtit", Tirana, Albania',
+      'email' => 'info@nsw.al',
+      'hours' => 'Monday – Friday, 08:00–16:00',
+      'hoursLabel' => 'Working Hours',
+      'mapPlaceholder' => 'Map will be added soon',
+    ),
+  ),
+  'faqPage' => 
+  array (
+    'title' => 'Frequently Asked Questions',
+    'subtitle' => 'Find answers to your questions about NSW',
+    'searchPlaceholder' => 'Search for a question...',
+    'categories' => 
+    array (
+      'general' => 'General',
+      'registration' => 'Registration',
+      'lpco' => 'LPCO Process',
+      'payments' => 'Payments',
+      'technical' => 'Technical Issues',
+      'agencies' => 'For Agencies',
+    ),
+  ),
+  'newsPage' => 
+  array (
+    'title' => 'News',
+    'subtitle' => 'The latest NSW announcements and updates',
+  ),
+  'notFound' => 
+  array (
+    'title' => 'Page Not Found',
+    'description' => 'The page you are looking for does not exist or has been moved.',
+    'backHome' => 'Back to Homepage',
+  ),
+);

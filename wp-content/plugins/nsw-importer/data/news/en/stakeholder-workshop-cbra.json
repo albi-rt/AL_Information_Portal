@@ -1,0 +1,19 @@
+{
+  "slug": "stakeholder-workshop-cbra",
+  "title": "Stakeholder Workshop Held with CBRA Representatives",
+  "date": "2025-03-20",
+  "author": "NSW Team",
+  "category": "events",
+  "excerpt": "A key workshop was held with representatives from eight cross-border regulatory agencies to discuss data harmonization and integration requirements for the NSW system.",
+  "content": [
+    "On March 20, 2025, the National Single Window project team organized a comprehensive workshop with representatives from the eight Cross-Border Regulatory Agencies (CBRAs) that will be integrated into the NSW system. The workshop was held at the Ministry of Economy and Innovation premises and focused on data harmonization and technical interoperability requirements.",
+    "During the workshop, each agency presented its current permitting and documentation processes, identifying areas where digitalization can deliver immediate benefits. Discussions centered on standardizing data formats, eliminating duplicate documentation, and establishing a shared catalogue of regulatory requirements across all participating agencies.",
+    "Technical experts from NAIS/AKSHI presented the proposed NSW system architecture and explained how it will integrate with the ASYCUDA World system. Agencies had the opportunity to provide feedback and suggestions on the user interface and workflow design that will be used for processing requests.",
+    "One of the key outcomes of the workshop was the agreement to establish technical working groups for each agency, which will work closely with the NSW project team during the development phase. This collaborative approach ensures that the final system will meet the real needs of all stakeholders.",
+    "The workshop concluded with a clear action plan and timelines for the upcoming phases of technical consultation, laying the groundwork for a successful NSW implementation."
+  ],
+  "relatedArticles": [
+    "nsw-project-launched",
+    "technical-architecture-blueprint"
+  ]
+}

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 54 62" fill="none" role="img" aria-label="NSW Albania">
+  <title>NSW Albania</title>
+
+  <!-- Shield base — institutional navy -->
+  <path d="M6 2 L48 2 Q54 2 54 8 L54 38 L27 60 L0 38 L0 8 Q0 2 6 2 Z" fill="#1A3B6E"/>
+
+  <!-- Red bottom stripe (Albanian flag) -->
+  <path d="M0 41 L54 41 L27 60 Z" fill="#C8102E"/>
+
+  <!-- Shield inner highlight -->
+  <path d="M6 2 L48 2 Q54 2 54 8 L54 38 L27 60 L0 38 L0 8 Q0 2 6 2 Z"
+        fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+
+  <!-- Agency nodes -->
+  <circle cx="12" cy="16" r="4" fill="white"/>
+  <circle cx="27" cy="10" r="4" fill="white"/>
+  <circle cx="42" cy="16" r="4" fill="white"/>
+
+  <!-- Convergence lines -->
+  <line x1="12" y1="20" x2="27" y2="38"
+        stroke="rgba(255,255,255,0.52)" stroke-width="1.7" stroke-linecap="round"/>
+  <line x1="27" y1="14" x2="27" y2="38"
+        stroke="rgba(255,255,255,0.52)" stroke-width="1.7" stroke-linecap="round"/>
+  <line x1="42" y1="20" x2="27" y2="38"
+        stroke="rgba(255,255,255,0.52)" stroke-width="1.7" stroke-linecap="round"/>
+
+  <!-- Central node -->
+  <circle cx="27" cy="38" r="6" fill="white"/>
+  <circle cx="27" cy="38" r="2.8" fill="#1A3B6E"/>
+</svg>

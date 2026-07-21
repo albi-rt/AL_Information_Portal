@@ -1,0 +1,176 @@
+[
+  {
+    "id": "general-what-is-nsw",
+    "category": "general",
+    "question": "What is the National Single Window (NSW)?",
+    "answer": "The National Single Window (NSW) is a single electronic entry point that allows traders and economic operators to submit all information and documents required for cross-border trade through one unified platform. Based on the UN/CEFACT Recommendation No. 33, the NSW connects traders with all relevant Cross-Border Regulatory Agencies (CBRAs) so that permits, licenses, certificates, and other authorizations can be applied for, processed, and issued electronically. The system eliminates the need to visit multiple government offices by centralizing all trade-related regulatory procedures in one place."
+  },
+  {
+    "id": "general-who-operates",
+    "category": "general",
+    "question": "Who operates NSW?",
+    "answer": "The NSW is operated by the National Agency for Information Society (AKSHI/NAIS), which serves as the technical operator responsible for the system's development, maintenance, and day-to-day operation. The lead policy institution is the Ministry of Economy and Innovation, which oversees the strategic direction and governance of the NSW initiative. AKSHI ensures that the platform remains available, secure, and integrated with all participating government agencies."
+  },
+  {
+    "id": "general-benefits",
+    "category": "general",
+    "question": "What are the benefits of NSW?",
+    "answer": "The NSW offers significant benefits for all stakeholders involved in cross-border trade. For traders, it reduces the time and cost of obtaining permits and licenses by eliminating the need for physical visits to multiple agencies and enabling 24/7 online submissions. For government agencies, it streamlines regulatory workflows, reduces paperwork, improves data quality, and enhances inter-agency coordination. For the economy as a whole, NSW improves trade facilitation, increases transparency, reduces opportunities for corruption, and helps Albania align with EU and international trade standards."
+  },
+  {
+    "id": "general-who-can-use",
+    "category": "general",
+    "question": "Who can use NSW?",
+    "answer": "The NSW can be used by any economic operator involved in import, export, or transit activities that require permits, licenses, certificates, or other authorizations from Cross-Border Regulatory Agencies. This includes registered businesses, customs brokers, freight forwarders, and authorized representatives acting on behalf of trading companies. Government agency officials who process applications and issue authorizations also use the system through dedicated agency portals."
+  },
+  {
+    "id": "general-legal-basis",
+    "category": "general",
+    "question": "What is the legal basis for NSW?",
+    "answer": "The NSW operates under the legal framework established by Albanian legislation on electronic governance and trade facilitation. The system is aligned with the Albanian Customs Code and relevant secondary legislation governing import and export permits and licenses. Additionally, the NSW adheres to the principles set out in the WTO Trade Facilitation Agreement (TFA), to which Albania is a signatory, and follows the UN/CEFACT Recommendation No. 33 on establishing a Single Window for cross-border trade."
+  },
+  {
+    "id": "registration-how-to-register",
+    "category": "registration",
+    "question": "How do I register as a trader in NSW?",
+    "answer": "To register as a trader in the NSW, you must first have a valid e-Albania account, as the NSW uses e-Albania for user authentication. Once logged into e-Albania, navigate to the NSW service and complete the trader registration form by providing your business details, including your NIPT (tax identification number), company name, and contact information. After submitting the registration request, your information will be verified against existing government databases, and upon successful validation, your NSW trader account will be activated."
+  },
+  {
+    "id": "registration-documents-needed",
+    "category": "registration",
+    "question": "What documents are needed for registration?",
+    "answer": "For NSW registration, you will need your company's NIPT (unique taxpayer identification number), a valid business registration certificate from the National Business Center (QKB), and the identification documents of the authorized representative. If you are registering as a customs broker or authorized representative, you will also need to provide a valid power of attorney or authorization letter from the company you represent. Most of this information is automatically retrieved from government databases through interoperability with e-Albania, reducing the need for manual document uploads."
+  },
+  {
+    "id": "registration-how-long",
+    "category": "registration",
+    "question": "How long does registration take?",
+    "answer": "Registration in the NSW is typically completed within 1 to 3 business days, depending on the verification of your submitted information against government databases. In most cases where the company information matches existing records in the tax and business registries, the account can be activated within 24 hours. If additional verification or documentation is required, you will be notified through the system, and the process may take slightly longer until all requirements are fulfilled."
+  },
+  {
+    "id": "registration-on-behalf-of-company",
+    "category": "registration",
+    "question": "Can I register on behalf of a company?",
+    "answer": "Yes, you can register on behalf of a company if you are an authorized representative, such as a customs broker, legal representative, or an employee with a valid power of attorney. During the registration process, you will need to specify your role and provide documentation proving your authorization to act on the company's behalf. A single company can have multiple authorized users, and the company administrator can manage user roles and permissions within the NSW system."
+  },
+  {
+    "id": "registration-foreign-companies",
+    "category": "registration",
+    "question": "Can foreign companies register?",
+    "answer": "Foreign companies that conduct import, export, or transit operations through Albanian territory can access NSW services, but they must do so through a locally registered customs broker or authorized representative who holds a valid Albanian NIPT. The customs broker or representative registers in the NSW on behalf of the foreign company and submits applications and documentation as needed. Foreign companies planning to establish a permanent presence in Albania should first register with the National Business Center (QKB) and the tax authorities to obtain a NIPT before registering directly in the NSW."
+  },
+  {
+    "id": "lpco-how-to-apply",
+    "category": "lpco",
+    "question": "How do I apply for a permit/license/certificate?",
+    "answer": "To apply for a permit, license, certificate, or other authorization (collectively known as LPCO), log into the NSW portal and select the appropriate application type from the service catalog. Complete the electronic application form by providing the required information about your goods, including HS codes, quantity, origin, destination, and any supporting documents. Once submitted, your application is automatically routed to the relevant Cross-Border Regulatory Agency (CBRA) for review and processing. You can monitor the status of your application in real time through your NSW dashboard."
+  },
+  {
+    "id": "lpco-which-agency",
+    "category": "lpco",
+    "question": "Which agency handles my product?",
+    "answer": "The NSW currently integrates with 8 participating Cross-Border Regulatory Agencies (CBRAs), and the responsible agency depends on the type of product and the nature of the regulatory requirement. For example, the National Food Authority (AKU) handles food safety certificates, the Institute of Public Health (ISHP) handles health-related permits, and the Ministry of Agriculture oversees phytosanitary and veterinary certificates. When you begin an LPCO application in the NSW, the system will guide you to the correct agency based on the HS code and product description you provide."
+  },
+  {
+    "id": "lpco-approval-time",
+    "category": "lpco",
+    "question": "How long does LPCO approval take?",
+    "answer": "Processing times vary depending on the type of LPCO and the responsible agency, but the NSW is designed to significantly reduce approval times compared to traditional paper-based processes. Most standard permits and certificates are processed within 3 to 10 business days, though some complex authorizations may require additional time for inspection or laboratory testing. Each participating agency has defined Service Level Agreements (SLAs) within the NSW, and traders can track the progress of their application and see estimated completion times through the system dashboard."
+  },
+  {
+    "id": "lpco-application-rejected",
+    "category": "lpco",
+    "question": "What happens if my application is rejected?",
+    "answer": "If your LPCO application is rejected, you will receive an electronic notification through the NSW system that includes the specific reasons for the rejection. Depending on the nature of the rejection, you may be able to correct the identified deficiencies and resubmit your application directly through the portal without starting a new application from scratch. If the rejection is based on a substantive regulatory issue (such as a product failing to meet safety standards), you will need to address the underlying issue before reapplying. You also have the right to appeal the decision through the procedures established by the relevant agency."
+  },
+  {
+    "id": "lpco-track-status",
+    "category": "lpco",
+    "question": "Can I track my application status?",
+    "answer": "Yes, the NSW provides full real-time tracking of all your LPCO applications through your trader dashboard. You can see the current status of each application (submitted, under review, approved, rejected, or pending additional information), the agency responsible for processing, and a complete history of all actions taken on the application. The system also sends automatic email and in-system notifications whenever there is a status change or when action is required from your side."
+  },
+  {
+    "id": "lpco-once-only",
+    "category": "lpco",
+    "question": "What is the \"once-only\" principle?",
+    "answer": "The \"once-only\" principle means that traders are required to submit their information and documents only once to the NSW, and this data is then shared electronically with all relevant government agencies that need it. This eliminates the duplication of data entry and document submission that occurs when traders must interact separately with multiple agencies. The NSW achieves this through system interoperability and secure data sharing protocols between participating agencies, customs (ASYCUDA World), and the e-Albania platform, ensuring that information provided once is reused across all regulatory processes."
+  },
+  {
+    "id": "payments-fees",
+    "category": "payments",
+    "question": "What fees apply for NSW services?",
+    "answer": "The fees for NSW services depend on the specific type of LPCO being requested and are set by the respective Cross-Border Regulatory Agencies according to their applicable tariff schedules. The NSW itself does not charge additional platform fees for submitting applications; traders pay only the statutory fees established by the issuing agency for the particular permit, license, or certificate. A complete fee schedule for each type of LPCO is available in the NSW service catalog, and the applicable fee is displayed clearly before you confirm your application submission."
+  },
+  {
+    "id": "payments-how-to-pay",
+    "category": "payments",
+    "question": "How do I pay?",
+    "answer": "Payments for LPCO fees can be made directly through the NSW portal using the integrated electronic payment system. When your application requires a fee, the system will generate a payment request with the exact amount due, and you can complete the payment online before or during the application process. The payment is processed securely and a digital receipt is automatically attached to your application file. You can view all your payment history and download receipts from the payments section of your NSW dashboard."
+  },
+  {
+    "id": "payments-methods",
+    "category": "payments",
+    "question": "What payment methods are accepted?",
+    "answer": "The NSW accepts payments through multiple electronic channels to provide maximum convenience for traders. Accepted methods include bank transfers, debit cards, and credit cards (Visa and Mastercard) through the integrated e-payment gateway. The system also supports payments through the e-Albania payment platform, which offers additional options including direct bank integrations with major Albanian banks. All payment transactions are processed through secure, PCI-compliant payment infrastructure to ensure the safety of your financial information."
+  },
+  {
+    "id": "payments-refund",
+    "category": "payments",
+    "question": "Can I get a refund?",
+    "answer": "Refund eligibility depends on the specific circumstances and the policies of the issuing agency. If a fee was paid for an application that was subsequently withdrawn before processing began, or if a duplicate payment was made in error, you may be eligible for a full refund. To request a refund, you should submit a refund request through the NSW portal or contact the relevant agency directly, providing the payment reference number and the reason for the refund request. Refunds are typically processed within 10 to 15 business days and returned through the original payment method."
+  },
+  {
+    "id": "technical-cannot-access",
+    "category": "technical",
+    "question": "I cannot access the NSW system",
+    "answer": "If you cannot access the NSW system, first verify that your internet connection is stable and that you are using a supported web browser (Google Chrome, Mozilla Firefox, or Microsoft Edge in their latest versions). Clear your browser cache and cookies, and try accessing the system again. If the problem persists, the system may be temporarily unavailable due to scheduled maintenance — check the NSW homepage or the AKSHI website for maintenance announcements. If none of these steps resolve the issue, contact the NSW Help Desk at the support contact details provided on the login page for further assistance."
+  },
+  {
+    "id": "technical-submission-failed",
+    "category": "technical",
+    "question": "My submission failed — what should I do?",
+    "answer": "If your submission failed, first check for any error messages displayed on the screen, as they often indicate the specific issue (such as missing required fields, invalid data formats, or file upload size limits). Ensure that all mandatory fields are completed correctly and that any attached documents meet the required format (PDF, JPG, or PNG) and size limits. If the failure appears to be a system error rather than a data validation issue, save your draft, wait a few minutes, and try resubmitting. If the problem continues, take a screenshot of the error message and contact the NSW Help Desk, providing your application reference number and the error details."
+  },
+  {
+    "id": "technical-error-message",
+    "category": "technical",
+    "question": "I received an error message",
+    "answer": "Error messages in the NSW system are designed to help you identify and resolve issues with your submission or account. Common errors include validation errors (incomplete or incorrectly formatted data), session timeout errors (which require you to log in again), and file upload errors (when documents exceed size limits or are in unsupported formats). Note the exact error code and message text, as this information is essential for the Help Desk to diagnose the issue quickly. If the error is unclear or you are unable to resolve it on your own, contact the NSW Help Desk with the error details, your username, and a description of the action you were performing."
+  },
+  {
+    "id": "technical-reset-password",
+    "category": "technical",
+    "question": "How do I reset my password?",
+    "answer": "Since the NSW uses e-Albania for user authentication, password management is handled through the e-Albania platform. To reset your password, go to the e-Albania login page and click on the \"Forgot Password\" link, then follow the instructions to verify your identity via your registered email address or mobile phone number. Once you have reset your e-Albania password, you can use the new credentials to log into the NSW. If you experience difficulties with the e-Albania password reset process, contact the e-Albania support center for assistance."
+  },
+  {
+    "id": "technical-browsers-supported",
+    "category": "technical",
+    "question": "What browsers are supported?",
+    "answer": "The NSW portal is optimized for use with the latest versions of Google Chrome, Mozilla Firefox, and Microsoft Edge. While the system may function on other modern browsers, these three are officially tested and supported to ensure the best user experience and full functionality. It is recommended to keep your browser updated to the latest version and to enable JavaScript and cookies for the NSW domain. Internet Explorer is not supported, and using outdated browsers may result in display issues or reduced functionality."
+  },
+  {
+    "id": "agencies-how-to-connect",
+    "category": "agencies",
+    "question": "How does my agency connect to NSW?",
+    "answer": "Government agencies connect to the NSW through a standardized technical integration process managed by AKSHI. The integration involves connecting the agency's existing systems (or deploying NSW-provided modules) through secure web service APIs that follow international data exchange standards. AKSHI provides comprehensive technical documentation, integration specifications, and a dedicated testing environment where agencies can validate their connections before going live. The onboarding process also includes workflow mapping, where the agency's existing LPCO procedures are modeled and configured within the NSW platform."
+  },
+  {
+    "id": "agencies-sla-requirements",
+    "category": "agencies",
+    "question": "What are the SLA requirements for agencies?",
+    "answer": "Each participating Cross-Border Regulatory Agency is required to adhere to defined Service Level Agreements (SLAs) that specify maximum processing times for each type of LPCO application handled through the NSW. These SLAs are established during the onboarding process in coordination with the Ministry of Economy and Innovation and are designed to ensure timely and predictable service delivery to traders. Agencies are expected to maintain system availability during official working hours, respond to trader submissions within the agreed timeframes, and provide clear reasons for any rejections or requests for additional information. SLA compliance is monitored through the NSW system's built-in reporting and analytics tools."
+  },
+  {
+    "id": "agencies-report-problem",
+    "category": "agencies",
+    "question": "How do I report a system problem as an agency?",
+    "answer": "Agency users can report technical problems through the dedicated agency support channel managed by AKSHI. For urgent system issues that affect the processing of applications, agencies should contact the AKSHI NSW technical support team directly via the priority support hotline or email provided during onboarding. For non-urgent issues, agencies can submit a support ticket through the NSW administration panel, which includes tools for describing the issue, attaching screenshots, and tracking the resolution status. AKSHI maintains a dedicated NSW operations team that monitors system health and responds to agency-reported issues according to defined severity levels and response times."
+  },
+  {
+    "id": "agencies-training",
+    "category": "agencies",
+    "question": "What training is available for agency staff?",
+    "answer": "AKSHI provides comprehensive training programs for agency staff as part of the NSW onboarding process, funded under the World Bank project. Training covers both technical aspects (system usage, application processing workflows, and reporting tools) and procedural aspects (SLA compliance, inter-agency coordination, and data quality management). Training is delivered through a combination of in-person workshops, hands-on practical sessions in the NSW testing environment, and online training materials that staff can access at any time. Refresher training and support for new staff members are available on an ongoing basis, and AKSHI maintains updated user manuals and video tutorials for all NSW agency functions."
+  }
+]

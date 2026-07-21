@@ -1,0 +1,98 @@
+[
+  {
+    "id": "nsw-law",
+    "category": "legal",
+    "title": { "sq": "Ligji për Dritaren e Vetme Kombëtare", "en": "Law on the National Single Window" },
+    "description": { "sq": "Kuadri ligjor bazë që rregullon krijimin dhe funksionimin e NSW-së në Shqipëri.", "en": "The foundational legal framework governing the establishment and operation of the NSW in Albania." },
+    "fileType": "PDF",
+    "size": "2.4 MB"
+  },
+  {
+    "id": "nsw-regulation",
+    "category": "legal",
+    "title": { "sq": "Rregullore për Zbatimin e NSW-së", "en": "Regulation on NSW Implementation" },
+    "description": { "sq": "Rregullore e detajuar për zbatimin e ligjit të NSW-së, përfshirë procedurat dhe afatet.", "en": "Detailed regulation for implementing the NSW law, including procedures and timelines." },
+    "fileType": "PDF",
+    "size": "1.8 MB"
+  },
+  {
+    "id": "wto-tfa-article",
+    "category": "legal",
+    "title": { "sq": "Marrëveshja e OBT-së për Lehtësimin e Tregtisë — Neni 10.4", "en": "WTO Trade Facilitation Agreement — Article 10.4" },
+    "description": { "sq": "Neni përkatës i marrëveshjes së OBT-së që trajton dritaret e vetme për tregtinë.", "en": "The relevant WTO agreement article addressing single window facilities for trade." },
+    "fileType": "PDF",
+    "size": "856 KB"
+  },
+  {
+    "id": "trader-guide",
+    "category": "guides",
+    "title": { "sq": "Udhëzuesi i Tregtarit për NSW-në", "en": "Trader's Guide to NSW" },
+    "description": { "sq": "Udhëzues i plotë hap-pas-hapi për tregtarët që përdorin platformën NSW, nga regjistrimi deri te ndjekja e aplikimeve.", "en": "Complete step-by-step guide for traders using the NSW platform, from registration to tracking applications." },
+    "fileType": "PDF",
+    "size": "3.2 MB"
+  },
+  {
+    "id": "cbra-manual",
+    "category": "guides",
+    "title": { "sq": "Manuali i CBRA-ve për NSW-në", "en": "CBRA Manual for NSW" },
+    "description": { "sq": "Manuali operativ për agjencitë rregullatore ndërkufitare (CBRA-të) që përdorin NSW-në.", "en": "Operational manual for Cross-Border Regulatory Agencies (CBRAs) using the NSW." },
+    "fileType": "PDF",
+    "size": "4.1 MB"
+  },
+  {
+    "id": "registration-guide",
+    "category": "guides",
+    "title": { "sq": "Udhëzues për Regjistrimin në NSW", "en": "NSW Registration Guide" },
+    "description": { "sq": "Hapat dhe dokumentet e nevojshme për t'u regjistruar si përdorues i NSW-së.", "en": "Steps and documents needed to register as an NSW user." },
+    "fileType": "PDF",
+    "size": "1.5 MB"
+  },
+  {
+    "id": "technical-architecture",
+    "category": "technical",
+    "title": { "sq": "Arkitektura Teknike e NSW-së", "en": "NSW Technical Architecture" },
+    "description": { "sq": "Dokumenti teknik që përshkruan arkitekturën e sistemit NSW, përfshirë komponentët dhe integrimet.", "en": "Technical document describing the NSW system architecture, including components and integrations." },
+    "fileType": "PDF",
+    "size": "5.6 MB"
+  },
+  {
+    "id": "api-documentation",
+    "category": "technical",
+    "title": { "sq": "Dokumentacioni i API-së së NSW-së", "en": "NSW API Documentation" },
+    "description": { "sq": "Specifikime teknike për integrimin e sistemeve të jashtme me platformën NSW.", "en": "Technical specifications for integrating external systems with the NSW platform." },
+    "fileType": "PDF",
+    "size": "2.9 MB"
+  },
+  {
+    "id": "data-standards",
+    "category": "technical",
+    "title": { "sq": "Standardet e të Dhënave të NSW-së", "en": "NSW Data Standards" },
+    "description": { "sq": "Standardet e formatimit dhe kodifikimit të të dhënave të përdorura në NSW.", "en": "Data formatting and codification standards used in the NSW." },
+    "fileType": "PDF",
+    "size": "1.3 MB"
+  },
+  {
+    "id": "lpco-application-form",
+    "category": "templates",
+    "title": { "sq": "Formulari i Aplikimit LPCO", "en": "LPCO Application Form" },
+    "description": { "sq": "Shablloni standard për paraqitjen e aplikimeve LPCO përmes NSW-së.", "en": "Standard template for submitting LPCO applications through the NSW." },
+    "fileType": "DOCX",
+    "size": "245 KB"
+  },
+  {
+    "id": "power-of-attorney",
+    "category": "templates",
+    "title": { "sq": "Prokurë për Përfaqësim", "en": "Power of Attorney" },
+    "description": { "sq": "Shablloni i prokurës që autorizon agjentë doganorë ose përfaqësues të tjerë.", "en": "Power of attorney template authorizing customs brokers or other representatives." },
+    "fileType": "DOCX",
+    "size": "128 KB"
+  },
+  {
+    "id": "complaint-form",
+    "category": "templates",
+    "title": { "sq": "Formulari i Ankesës", "en": "Complaint Form" },
+    "description": { "sq": "Formulari për paraqitjen e ankesave ose reagimeve rreth shërbimit NSW.", "en": "Form for submitting complaints or feedback about the NSW service." },
+    "fileType": "PDF",
+    "size": "156 KB"
+  }
+]
