@@ -1,10 +1,10 @@
 # NSW Albania — Production Deploy Runbook (Plesk)
 
-Deploy = **WordPress install + theme/plugin code + database + uploads**. The code
+Deploy = **WordPress install + theme code + database + uploads**. The code
 is in this repo; the content lives in the database. Local users are NOT exported —
 production keeps its own Plesk-created admin account.
 
-- Repo: this repository (`wp-content/themes/nsw-theme` + `wp-content/plugins/nsw-importer`; WP core is gitignored)
+- Repo: this repository (`wp-content/themes/nsw-theme`; WP core and third-party plugins are gitignored)
 - **Database export & uploads travel separately** (not in git): the users-excluded DB dump
   `nswal-PROD-<hash>.sql.gz` and the `wp-content/uploads/` folder (~19 MB) come from the
   local machine's `backups/` folder / Local site.
@@ -26,21 +26,20 @@ WordPress Toolkit → your site → **Plugins** → **Install** → from wordpre
 - **Polylang** (required — the whole bilingual system depends on it), then **Members**, **Post Views Counter**, **Revisionary**.
 - Activate all four.
 
-## 4. Deploy the theme + importer code
+## 4. Deploy the theme code
 **Option A — Git (Plesk Git feature):**
 Plesk → domain → **Git** → **Add Repository** →
 - Remote URL: `https://github.com/albi-rt/AL_Information_Portal.git`
 - Deployment path: the site's document root (e.g. `httpdocs`)
 - Deploy mode: Manual (or Automatic).
-Then **Pull / Deploy**. Git only writes tracked files, so it adds `wp-content/themes/nsw-theme` and `wp-content/plugins/nsw-importer` **on top of** the WP install without touching core.
+Then **Pull / Deploy**. Git only writes tracked files, so it adds `wp-content/themes/nsw-theme` **on top of** the WP install without touching core.
 (This also drops `DEPLOY.md` into the webroot — harmless, no secrets — delete it from prod or block `*.md` if you prefer it not be public.)
 
 **Option B — Upload (simpler for a one-off; nothing extra lands in the webroot):**
-Plesk → domain → **Files** (File Manager) or SFTP → upload these two folders into `httpdocs/wp-content/`:
-- `themes/nsw-theme/`  ·  `plugins/nsw-importer/`
+Plesk → domain → **Files** (File Manager) or SFTP → upload the theme folder into `httpdocs/wp-content/themes/`:
+- `themes/nsw-theme/`
 
 Then WordPress Toolkit → **Themes** → activate **NSW Theme**.
-> **Do NOT run "Tools → NSW Setup"** — that importer is a stale one-time bootstrap. The DB import (step 5) is the source of truth.
 
 ## 5. Import the database
 The export already **excludes `wp_users`/`wp_usermeta`**, so your Plesk admin survives the import.
