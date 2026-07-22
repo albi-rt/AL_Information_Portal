@@ -216,6 +216,7 @@
 	// 2) Structural / data blocks — preview only, no user fields.
 	[
 		[ 'nsw-theme/primary-nav', 'NSW Primary Navigation' ],
+		[ 'nsw-theme/language-switcher', 'NSW Language Switcher' ],
 		[ 'nsw-theme/page-hero', 'NSW Page Hero' ],
 		[ 'nsw-theme/news-list', 'NSW News List' ],
 		[ 'nsw-theme/single-post', 'NSW Single Article' ],

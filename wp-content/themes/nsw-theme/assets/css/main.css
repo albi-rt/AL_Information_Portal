@@ -431,6 +431,14 @@ body.admin-bar .site-header { top: 32px; }
 	width: 0.875rem;
 	height: 0.875rem;
 }
+/* The visible button is the inner <a>; give it comfortable, balanced vertical
+   padding so the label isn't cramped against the bottom edge. */
+.site-header__login .wp-block-button__link {
+	padding: 0.4rem 0.9rem;
+	line-height: 1;
+	font-size: 0.8125rem;
+	font-weight: 600;
+}
 /* Sticky-header element — don't lift on hover (feels jittery while scrolled). */
 .site-header__login:hover,
 .site-header__login:active,
@@ -1947,11 +1955,8 @@ body.admin-bar .site-header { top: 32px; }
 .site-header .wp-block-navigation__submenu-container .wp-block-navigation-item__content:hover { background: var(--muted); color: var(--primary); }
 
 /* Language switcher */
-.site-header .wp-block-polylang-language-switcher { list-style: none; display: flex; align-items: center; gap: 0.5rem; margin: 0; padding: 0; }
-.site-header .wp-block-polylang-language-switcher .lang-item a { color: var(--muted-foreground); text-decoration: none; text-transform: uppercase; font-size: 0.8125rem; font-weight: 600; }
-.site-header .wp-block-polylang-language-switcher .lang-item.current-lang a { color: var(--primary); }
-.site-header .wp-block-polylang-language-switcher .lang-item + .lang-item { border-left: 1px solid var(--border); padding-left: 0.5rem; }
-.site-header .wp-block-polylang-language-switcher img { display: none; }
+/* Language switcher is the theme's nsw-theme/language-switcher block
+   (.lang-switcher, styled above). No Polylang-core-block styles needed. */
 
 /* Right cluster + logo */
 .site-header__right { display: flex; align-items: center; gap: 1rem; }

@@ -377,6 +377,42 @@ function nsw_theme_block_primary_nav(): string {
 	return nsw_theme_render_block_nav( 'nsw-primary', 'mobile' );
 }
 
+/* ---- Language switcher (SQ | EN pills, active = primary button) ---- */
+
+function nsw_theme_block_language_switcher(): string {
+	if ( ! function_exists( 'pll_the_languages' ) ) {
+		return '';
+	}
+	$langs = pll_the_languages(
+		array(
+			'raw'                    => 1,
+			'hide_if_no_translation' => 0,
+			'hide_current'           => 0,
+		)
+	);
+	if ( empty( $langs ) || ! is_array( $langs ) ) {
+		return '';
+	}
+	$out = '<div class="lang-switcher">';
+	$i   = 0;
+	foreach ( $langs as $l ) {
+		if ( $i++ > 0 ) {
+			$out .= '<span class="lang-switcher__sep" aria-hidden="true">|</span>';
+		}
+		$active = ! empty( $l['current_lang'] );
+		$out   .= sprintf(
+			'<a class="lang-switcher__link%s" href="%s" lang="%s"%s>%s</a>',
+			$active ? ' is-active' : '',
+			esc_url( (string) ( $l['url'] ?? '#' ) ),
+			esc_attr( (string) ( $l['slug'] ?? '' ) ),
+			$active ? ' aria-current="true"' : '',
+			esc_html( strtoupper( (string) ( $l['slug'] ?? '' ) ) )
+		);
+	}
+	$out .= '</div>';
+	return $out;
+}
+
 /* ---- Single news article (bespoke design) ---- */
 
 function nsw_theme_block_single_post(): string {
@@ -432,6 +468,7 @@ add_action(
 			'nsw-theme/footer-contact'   => array( 'nsw_theme_block_footer_contact', 'NSW Footer Contact' ),
 			'nsw-theme/page-hero'        => array( 'nsw_theme_block_page_hero', 'NSW Page Hero' ),
 			'nsw-theme/primary-nav'      => array( 'nsw_theme_block_primary_nav', 'NSW Primary Navigation' ),
+			'nsw-theme/language-switcher' => array( 'nsw_theme_block_language_switcher', 'NSW Language Switcher' ),
 			'nsw-theme/news-list'        => array( 'nsw_theme_block_news_list', 'NSW News List' ),
 			'nsw-theme/single-post'      => array( 'nsw_theme_block_single_post', 'NSW Single Article' ),
 			'nsw-theme/not-found'        => array( 'nsw_theme_block_not_found', 'NSW Not Found (404)' ),
