@@ -222,9 +222,9 @@
 		[ 'nsw-theme/not-found', 'NSW Not Found (404)' ],
 		[ 'nsw-theme/footer-logo', 'NSW Footer Logo' ],
 		[ 'nsw-theme/footer-contact', 'NSW Footer Contact' ],
-		// Data-driven page blocks.
+		// Data-driven page blocks. (partners-page is registered from NSW_BLOCKS
+		// below because it has editable "Private Sector" fields.)
 		[ 'nsw-theme/agencies', 'NSW Agencies (full list)' ],
-		[ 'nsw-theme/partners-page', 'NSW Partners (full page)' ],
 		[ 'nsw-theme/faq', 'NSW FAQ' ],
 		[ 'nsw-theme/documents', 'NSW Documents' ],
 		[ 'nsw-theme/events', 'NSW Events' ],

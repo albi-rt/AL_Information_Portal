@@ -144,16 +144,6 @@ add_action(
 		foreach ( nsw_theme_flatten_strings( (array) nsw_theme_get_content( 'en' ) ) as $name => $value ) {
 			pll_register_string( $name, $value, 'NSW Theme', strlen( $value ) > 80 );
 		}
-		// Plain gettext-string sources ( __('…','nsw-theme') ), registered so they
-		// persist + are editable; their Albanian lives in Polylang.
-		$ui = NSW_THEME_DIR . 'languages/ui-en.php';
-		if ( is_readable( $ui ) ) {
-			foreach ( (array) require $ui as $value ) {
-				if ( is_string( $value ) && '' !== $value ) {
-					pll_register_string( substr( md5( $value ), 0, 12 ), $value, 'NSW Theme', strlen( $value ) > 80 );
-				}
-			}
-		}
 	}
 );
 

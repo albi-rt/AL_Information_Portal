@@ -15,8 +15,12 @@ $locale   = nsw_theme_current_locale();
 $international = array_values( array_filter( $partners, function ( $p ) { return ( $p['type'] ?? '' ) === 'international'; } ) );
 $government    = array_values( array_filter( $partners, function ( $p ) { return ( $p['type'] ?? '' ) === 'government'; } ) );
 
-$private_actors_field = nsw_theme_dot_get( nsw_theme_get_content(), 'partnersPage.privateSectorActors' );
-$private_actors       = is_array( $private_actors_field ) ? $private_actors_field : array();
+// Private-sector copy comes from the partners-page block's editable fields
+// (set as query vars by the render callback). Actors is a newline list.
+$private_title    = (string) get_query_var( 'nsw_pp_private_title' );
+$private_desc     = (string) get_query_var( 'nsw_pp_private_desc' );
+$private_benefits = (string) get_query_var( 'nsw_pp_private_benefits' );
+$private_actors   = array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', (string) get_query_var( 'nsw_pp_private_actors' ) ) ) ) );
 
 $render_partner_card = static function ( array $partner, string $locale ) {
 	$name    = nsw_theme_localized( $partner['name'] ?? '', $locale );
@@ -79,9 +83,9 @@ $render_partner_card = static function ( array $partner, string $locale ) {
 	<div class="container" data-reveal>
 		<div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem">
 			<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary)" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-			<h2 class="section-heading__title" style="text-align:left"><?php echo esc_html( nsw_theme_t( 'partnersPage.privateSectorTitle', 'Private Sector' ) ); ?></h2>
+			<h2 class="section-heading__title" style="text-align:left"><?php echo esc_html( $private_title ); ?></h2>
 		</div>
-		<p class="section-heading__lede" style="text-align:left; max-width: none; margin-bottom: 1rem"><?php echo esc_html( nsw_theme_t( 'partnersPage.privateSectorDesc', '' ) ); ?></p>
+		<p class="section-heading__lede" style="text-align:left; max-width: none; margin-bottom: 1rem"><?php echo esc_html( $private_desc ); ?></p>
 		<?php if ( ! empty( $private_actors ) ) : ?>
 			<ul style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem">
 				<?php foreach ( $private_actors as $actor ) : ?>
@@ -92,6 +96,6 @@ $render_partner_card = static function ( array $partner, string $locale ) {
 				<?php endforeach; ?>
 			</ul>
 		<?php endif; ?>
-		<p style="color: var(--muted-foreground)"><?php echo esc_html( nsw_theme_t( 'partnersPage.privateSectorBenefits', '' ) ); ?></p>
+		<p style="color: var(--muted-foreground)"><?php echo esc_html( $private_benefits ); ?></p>
 	</div>
 </section>

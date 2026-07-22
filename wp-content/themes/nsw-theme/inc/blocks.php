@@ -97,6 +97,14 @@ function nsw_theme_block_fields(): array {
 			array( 'attr' => 'buttonText','label' => 'Button label',  'type' => 'text',     'default' => nsw_theme_t( 'ctaSection.button', 'Contact Us' ) ),
 			array( 'attr' => 'buttonUrl', 'label' => 'Button link',   'type' => 'url',      'default' => nsw_theme_path_url( 'contact' ) ),
 		),
+		// Partners page: the International/Government columns come from the
+		// nsw_partner CPTs; only the "Private Sector" block is editorial copy.
+		'nsw-theme/partners-page' => array(
+			array( 'attr' => 'privateTitle',    'label' => 'Private Sector — title',                'type' => 'text',     'default' => nsw_theme_t( 'partnersPage.privateSectorTitle', 'Private Sector' ) ),
+			array( 'attr' => 'privateDesc',     'label' => 'Private Sector — description',          'type' => 'textarea', 'default' => nsw_theme_t( 'partnersPage.privateSectorDesc', '' ) ),
+			array( 'attr' => 'privateActors',   'label' => 'Private Sector — actors (one per line)','type' => 'textarea', 'default' => implode( "\n", (array) nsw_theme_dot_get( nsw_theme_get_content(), 'partnersPage.privateSectorActors', array() ) ) ),
+			array( 'attr' => 'privateBenefits', 'label' => 'Private Sector — benefits',             'type' => 'textarea', 'default' => nsw_theme_t( 'partnersPage.privateSectorBenefits', '' ) ),
+		),
 	);
 }
 

@@ -11,8 +11,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $cats = nsw_theme_dot_get( nsw_theme_get_content(), 'contactPage.form.categoryOptions' );
 $cats = is_array( $cats ) ? $cats : array();
-$ags  = nsw_theme_dot_get( nsw_theme_get_content(), 'contactPage.form.agencyOptions' );
-$ags  = is_array( $ags ) ? $ags : array();
+
+// Agency dropdown is built from the nsw_agency CPTs (Polylang scopes the query
+// to the current language, so names come out localized), wrapped by a General
+// default and an Other fallback. No hardcoded agency list.
+$ags = array( 'general' => __( 'General', 'nsw-theme' ) );
+foreach ( get_posts( array(
+	'post_type'      => 'nsw_agency',
+	'post_status'    => 'publish',
+	'posts_per_page' => -1,
+	'orderby'        => 'menu_order title',
+	'order'          => 'ASC',
+	'no_found_rows'  => true,
+) ) as $nsw_agency_post ) {
+	$slug = get_post_meta( $nsw_agency_post->ID, '_nsw_theme_agency_id', true );
+	$slug = '' !== $slug ? $slug : $nsw_agency_post->post_name;
+	$name = get_post_meta( $nsw_agency_post->ID, '_nsw_theme_agency_name', true );
+	$ags[ (string) $slug ] = '' !== $name ? $name : get_the_title( $nsw_agency_post );
+}
+$ags['other'] = __( 'Other', 'nsw-theme' );
 ?>
 <section class="section">
 	<div class="container">
