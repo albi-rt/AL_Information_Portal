@@ -9,6 +9,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Output the theme's favicon in the document <head>. Block (FSE) themes build
+ * their <head> via wp_head() and never load header.php, so the favicon has to
+ * be hooked here. If a WordPress Site Icon is set, WordPress emits its own
+ * tags and we skip ours.
+ */
+add_action(
+	'wp_head',
+	function () {
+		if ( function_exists( 'has_site_icon' ) && has_site_icon() ) {
+			return;
+		}
+		echo '<link rel="icon" type="image/svg+xml" href="' . esc_url( NSW_THEME_URI . 'assets/images/logos/favicon.svg' ) . '" />' . "\n";
+	}
+);
+
 add_action(
 	'after_setup_theme',
 	function () {
