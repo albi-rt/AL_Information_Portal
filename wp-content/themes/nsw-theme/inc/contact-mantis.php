@@ -101,3 +101,44 @@ function nsw_theme_contact_build_issue_payload( array $data ): array {
         'custom_fields' => nsw_theme_contact_build_custom_fields( $data ),
     );
 }
+
+/**
+ * Create a MantisBT issue via REST. Returns array{id:int} or WP_Error.
+ *
+ * @param array $data Validated form data.
+ * @return array{id:int}|WP_Error
+ */
+function nsw_theme_contact_create_mantis_issue( array $data ) {
+    $base  = rtrim( nsw_theme_contact_config( 'mantis_url' ), '/' );
+    $token = nsw_theme_contact_config( 'mantis_token' );
+
+    $response = wp_remote_post(
+        $base . '/api/rest/issues',
+        array(
+            'timeout' => 15,
+            'headers' => array(
+                'Authorization' => $token,           // raw token, no Bearer prefix
+                'Accept'        => 'application/json',
+                'Content-Type'  => 'application/json',
+            ),
+            'body'    => wp_json_encode( nsw_theme_contact_build_issue_payload( $data ) ),
+        )
+    );
+
+    if ( is_wp_error( $response ) ) {
+        error_log( 'NSW Theme contact: Mantis transport error: ' . $response->get_error_message() );
+        return new WP_Error( 'nsw_theme_mantis_failed', __( 'Failed to create support request.', 'nsw-theme' ), array( 'status' => 502 ) );
+    }
+
+    $code = (int) wp_remote_retrieve_response_code( $response );
+    $body = (string) wp_remote_retrieve_body( $response );
+
+    if ( $code < 200 || $code >= 300 ) {
+        error_log( 'NSW Theme contact: Mantis create issue error: ' . $code . ' — ' . $body );
+        return new WP_Error( 'nsw_theme_mantis_failed', __( 'Failed to create support request.', 'nsw-theme' ), array( 'status' => 502 ) );
+    }
+
+    $decoded = json_decode( $body, true );
+    $id      = ( is_array( $decoded ) && isset( $decoded['issue']['id'] ) ) ? (int) $decoded['issue']['id'] : 0;
+    return array( 'id' => $id );
+}

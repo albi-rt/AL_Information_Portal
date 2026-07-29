@@ -50,7 +50,29 @@ check( 'payload project id',   $p['project']['id'] === 1 );
 check( 'payload category name', $p['category']['name'] === 'Technical issue' );
 check( 'payload has custom_fields array', is_array( $p['custom_fields'] ) && count( $p['custom_fields'] ) >= 4 );
 
-// ==== TRANSPORT TESTS INSERTED HERE IN B3 ====
+// ---- transport: success ----
+$GLOBALS['__wp_remote_post_return'] = array(
+    'response' => array( 'code' => 201 ),
+    'body'     => json_encode( array( 'issue' => array( 'id' => 42 ) ) ),
+);
+$res = nsw_theme_contact_create_mantis_issue( $data );
+check( 'create returns id on 201', is_array( $res ) && ( $res['id'] ?? 0 ) === 42 );
+check( 'POST hit issues endpoint', strpos( $GLOBALS['__wp_remote_post_args']['url'], '/api/rest/issues' ) !== false );
+check( 'Authorization header is raw token',
+    ( $GLOBALS['__wp_remote_post_args']['args']['headers']['Authorization'] ?? '' ) === 'tok-123' );
+
+// ---- transport: HTTP error ----
+$GLOBALS['__wp_remote_post_return'] = array(
+    'response' => array( 'code' => 400 ),
+    'body'     => '{"message":"bad"}',
+);
+$res = nsw_theme_contact_create_mantis_issue( $data );
+check( 'create returns WP_Error on 400', is_wp_error( $res ) );
+
+// ---- transport: connection error ----
+$GLOBALS['__wp_remote_post_return'] = new WP_Error( 'http_request_failed', 'down' );
+$res = nsw_theme_contact_create_mantis_issue( $data );
+check( 'create returns WP_Error on transport error', is_wp_error( $res ) );
 
 echo $fails === 0 ? "\nALL PASS\n" : "\n$fails FAILED\n";
 exit( $fails === 0 ? 0 : 1 );
