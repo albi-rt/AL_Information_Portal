@@ -30,5 +30,6 @@ require NSW_THEME_DIR . 'inc/data-blocks.php';
 require NSW_THEME_DIR . 'inc/post-types.php';
 require NSW_THEME_DIR . 'inc/taxonomies.php';
 require NSW_THEME_DIR . 'inc/meta-boxes.php';
+require NSW_THEME_DIR . 'inc/contact-mantis.php';
 require NSW_THEME_DIR . 'inc/contact-form.php';
 require NSW_THEME_DIR . 'inc/admin.php';
