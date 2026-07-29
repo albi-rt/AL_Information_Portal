@@ -386,7 +386,7 @@ This task's "test" is a live REST assertion. Write the assertion first, watch it
 
 **Interfaces:**
 - Consumes: A1 (tree + config), A2 (setup SQL).
-- Produces: a running local Mantis at `http://localhost:8090/` with a ticket-creating REST endpoint and a known dev token `nswal-dev-token-0001`. Consumed by Phase C.
+- Produces: a running local Mantis at `http://localhost:8090/` with a ticket-creating REST endpoint and a known dev token `nswaldevtoken0000000000000000000`. Consumed by Phase C.
 
 - [ ] **Step 1: Write the acceptance assertion (the "failing test").** Save as `/Users/albi/dev/mantis-nswal/sql/../verify_rest.sh` → actually create `/Users/albi/dev/mantis-nswal/scripts/verify_rest.sh`:
 
@@ -394,7 +394,7 @@ This task's "test" is a live REST assertion. Write the assertion first, watch it
 #!/usr/bin/env bash
 set -euo pipefail
 BASE="http://localhost:8090"
-TOKEN="nswal-dev-token-0001"
+TOKEN="nswaldevtoken0000000000000000000"
 RESP="$(curl -s -w '\n%{http_code}' -X POST "$BASE/api/rest/issues" \
   -H "Authorization: $TOKEN" -H "Content-Type: application/json" \
   -d '{
@@ -475,11 +475,11 @@ Expected: project id `1` = "NSW Albania Support"; 7 categories; users incl. `nsw
 Write `/Users/albi/dev/mantis-nswal/sql/nswal_dev_token.sql`:
 ```sql
 -- DEV ONLY. Seeds a known API token for nswal_web so local/CI tests can call REST.
--- Plain token: nswal-dev-token-0001   Hash: sha256(plain), unsalted.
+-- Plain token: nswaldevtoken0000000000000000000   Hash: sha256(plain), unsalted.
 -- Production: mint a real token via the Mantis UI instead (see DEPLOY.md).
 INSERT IGNORE INTO mantis_api_token_table (user_id, name, hash, date_created, date_used)
 SELECT u.id, 'wordpress-dev',
-       SHA2('nswal-dev-token-0001', 256),
+       SHA2('nswaldevtoken0000000000000000000', 256),
        UNIX_TIMESTAMP(), UNIX_TIMESTAMP()
 FROM mantis_user_table u
 WHERE u.username = 'nswal_web';
@@ -499,7 +499,7 @@ Expected: prints the created issue JSON, `HTTP 201`, then `PASS`.
 - [ ] **Step 8: Confirm the ticket landed in the right project with fields populated:**
 
 ```bash
-curl -s -H "Authorization: nswal-dev-token-0001" "http://localhost:8090/api/rest/issues/1" \
+curl -s -H "Authorization: nswaldevtoken0000000000000000000" "http://localhost:8090/api/rest/issues/1" \
   | python3 -m json.tool | grep -iE '"name"|"id"|Customer|Portal|General inquiry' | head
 ```
 Expected: project "NSW Albania Support", category "General inquiry", custom fields present.
@@ -1237,7 +1237,7 @@ git commit -m "feat(theme): contact form creates MantisBT tickets; remove Jira i
 
 ```php
 define( 'NSW_THEME_MANTIS_URL',        'http://localhost:8090/' );
-define( 'NSW_THEME_MANTIS_TOKEN',      'nswal-dev-token-0001' );
+define( 'NSW_THEME_MANTIS_TOKEN',      'nswaldevtoken0000000000000000000' );
 define( 'NSW_THEME_MANTIS_PROJECT_ID', '1' );
 ```
 Confirm **Settings → General → NSW Contact Form** shows the green *"MantisBT is configured"* status.
@@ -1249,7 +1249,7 @@ If the WP site is not running locally, exercise the endpoint directly instead: f
 - [ ] **Step 3: Confirm the ticket exists in the NSW project via REST:**
 
 ```bash
-curl -s -H "Authorization: nswal-dev-token-0001" \
+curl -s -H "Authorization: nswaldevtoken0000000000000000000" \
   "http://localhost:8090/api/rest/issues?project_id=1&page_size=5" \
   | python3 -m json.tool | grep -iE '"summary"|Customer|"name"' | head
 ```
