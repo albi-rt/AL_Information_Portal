@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'NSW_THEME_VERSION' ) ) {
-	define( 'NSW_THEME_VERSION', '0.8.1' );
+	define( 'NSW_THEME_VERSION', '0.9.0' );
 }
 if ( ! defined( 'NSW_THEME_DIR' ) ) {
 	define( 'NSW_THEME_DIR', trailingslashit( get_template_directory() ) );
@@ -32,4 +32,6 @@ require NSW_THEME_DIR . 'inc/taxonomies.php';
 require NSW_THEME_DIR . 'inc/meta-boxes.php';
 require NSW_THEME_DIR . 'inc/contact-mantis.php';
 require NSW_THEME_DIR . 'inc/contact-form.php';
+require NSW_THEME_DIR . 'inc/agency-news.php';
+require NSW_THEME_DIR . 'inc/migrations.php';
 require NSW_THEME_DIR . 'inc/admin.php';

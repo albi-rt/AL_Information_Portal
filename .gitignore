@@ -31,9 +31,10 @@ wp-content/plugins/*
 # Plugins (Polylang, Members, Post Views Counter, Revisionary) are ignored —
 # install them from the WP plugin directory on each environment.
 
-# === OS / editor ===
+# === OS / editor / tooling ===
 .DS_Store
 Thumbs.db
 *.log
 .idea/
 .vscode/
+.claude/
