@@ -33,5 +33,6 @@ require NSW_THEME_DIR . 'inc/meta-boxes.php';
 require NSW_THEME_DIR . 'inc/contact-mantis.php';
 require NSW_THEME_DIR . 'inc/contact-form.php';
 require NSW_THEME_DIR . 'inc/agency-news.php';
+require NSW_THEME_DIR . 'inc/rest-api.php';
 require NSW_THEME_DIR . 'inc/migrations.php';
 require NSW_THEME_DIR . 'inc/admin.php';
