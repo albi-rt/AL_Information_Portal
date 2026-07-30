@@ -31,6 +31,9 @@ wp-content/plugins/*
 # Plugins (Polylang, Members, Post Views Counter, Revisionary) are ignored —
 # install them from the WP plugin directory on each environment.
 
+# === Local docs / notes (don't deploy to the public webroot) ===
+docs/
+
 # === OS / editor / tooling ===
 .DS_Store
 Thumbs.db
