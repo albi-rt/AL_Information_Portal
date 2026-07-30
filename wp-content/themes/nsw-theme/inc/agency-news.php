@@ -247,12 +247,19 @@ add_action(
 
 /* --------------------------------------------------------------------------
  * 6. Block editing/deleting another agency's News (even by direct URL)
+ *
+ * `copy_post` is PublishPress Revisions' entry gate for the "Revise" / submit-
+ * revision flow. Once officers lack `edit_published_posts` (see section 7), that
+ * flow — not the core Edit link (`edit_post`) — is how they touch PUBLISHED News,
+ * so we must scope it to their agency too, or an officer could open a revision on
+ * another agency's live post. We run at priority 10 (Revisions maps `copy_post`
+ * at priority 5), so returning `do_not_allow` here still vetoes cross-agency.
  * -------------------------------------------------------------------------- */
 
 add_filter(
 	'map_meta_cap',
 	function ( $caps, $cap, $user_id, $args ) {
-		if ( ! in_array( $cap, array( 'edit_post', 'delete_post', 'publish_post' ), true ) ) {
+		if ( ! in_array( $cap, array( 'edit_post', 'delete_post', 'publish_post', 'copy_post' ), true ) ) {
 			return $caps;
 		}
 		$user = get_user_by( 'id', $user_id );
@@ -279,7 +286,64 @@ add_filter(
 );
 
 /* --------------------------------------------------------------------------
- * 7. Agency column in the News list
+ * 7. Approval-workflow guard: warn admins when the officer role's capabilities
+ *    bypass admin approval
+ *
+ * CONTRACT: the Agency Officer role's capabilities are POLICY, owned entirely by
+ * the Members plugin UI (Members → Roles) and tuned per environment. Theme code
+ * does NOT add, remove, or otherwise manipulate any role capability. The approval
+ * workflow is a pure consequence of which boxes are ticked:
+ *   - NEW News: WordPress core reads `publish_posts`. Unticked → officers get the
+ *     "Submit for Review" flow (post saved `pending`, an admin publishes it);
+ *     ticked → they publish live directly.
+ *   - EDITS to PUBLISHED News: PublishPress Revisions reads `edit_published_posts`
+ *     (see rvy_is_full_editor in wp-content/plugins/revisionary/rvy_init-functions.php).
+ *     Unticked → the officer is a non-full editor and edits route into the
+ *     pending-revision approval queue for an admin to approve; ticked → they edit
+ *     live posts directly. `delete_published_posts` likewise gates deleting live
+ *     News outright.
+ *
+ * So the whole approval path lives in those checkboxes. The theme enforces only
+ * agency isolation (sections 1-6, 8) plus this visible guard: if the role still
+ * carries any of the three approval-bypassing caps, warn admins so the drift is
+ * obvious and fixable in the Members UI. This is a read-only check on page render
+ * — no cap manipulation, no DB writes, no option storage.
+ * -------------------------------------------------------------------------- */
+
+add_action(
+	'admin_notices',
+	function () {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		$role = get_role( nsw_agency_officer_role() );
+		if ( ! $role ) {
+			return;
+		}
+		$bypass  = array( 'publish_posts', 'edit_published_posts', 'delete_published_posts' );
+		$present = array();
+		foreach ( $bypass as $cap ) {
+			if ( $role->has_cap( $cap ) ) {
+				$present[] = $cap;
+			}
+		}
+		if ( ! $present ) {
+			return;
+		}
+		printf(
+			'<div class="notice notice-warning"><p>%s</p><p>%s</p></div>',
+			sprintf(
+				/* translators: %s: comma-separated list of WordPress capability slugs. */
+				esc_html__( 'The Agency Officer role can currently publish, edit, or delete live News directly, bypassing admin approval. Offending capabilities: %s.', 'nsw-theme' ),
+				'<code>' . implode( '</code>, <code>', array_map( 'esc_html', $present ) ) . '</code>'
+			),
+			esc_html__( 'Untick those capabilities in Members → Roles to restore the approval workflow.', 'nsw-theme' )
+		);
+	}
+);
+
+/* --------------------------------------------------------------------------
+ * 8. Agency column in the News list
  * -------------------------------------------------------------------------- */
 
 add_filter(
