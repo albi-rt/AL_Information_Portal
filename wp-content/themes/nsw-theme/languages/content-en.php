@@ -71,6 +71,32 @@ return array (
     'conference' => 'Conference',
     'training' => 'Training',
   ),
+  'servicesPage' => 
+  array (
+    'title' => 'Trade Services',
+    'subtitle' => 'Find the steps, documents and fees for any import, export or transit operation.',
+    'filterByType' => 'Filter by operation',
+    'filterByAgency' => 'Filter by agency',
+    'allTypes' => 'All operations',
+    'allAgencies' => 'All agencies',
+    'types' => 
+    array (
+      'import' => 'Import',
+      'export' => 'Export',
+      'transit' => 'Transit',
+    ),
+    'noResults' => 'No services match your selection.',
+    'noServices' => 'Service guides will be published here soon.',
+    'readGuide' => 'Read the guide',
+    'backToServices' => 'Back to Services',
+    'responsibleAgency' => 'Responsible agency',
+    'relatedTitle' => 'Related services',
+    'stepsTitle' => 'Steps',
+    'documentsTitle' => 'Required documents',
+    'feesTitle' => 'Fees',
+    'processingTitle' => 'Processing time',
+    'contactTitle' => 'Contact',
+  ),
   'contactPage' => 
   array (
     'formTitle' => 'Send a Message',
@@ -136,5 +162,9 @@ return array (
     'title' => 'Page Not Found',
     'description' => 'The page you are looking for does not exist or has been moved.',
     'backHome' => 'Back to Homepage',
+  ),
+  'nav' => 
+  array (
+    'services' => 'Services',
   ),
 );

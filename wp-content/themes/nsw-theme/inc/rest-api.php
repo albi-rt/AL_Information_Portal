@@ -38,7 +38,7 @@ const NSW_API_EXTERNAL_ID  = '_nsw_api_external_id';
 
 /** Post types this endpoint accepts. */
 function nsw_rest_supported_types(): array {
-	return array( 'post', 'page', NSW_THEME_CPT_DOCUMENT, NSW_THEME_CPT_EVENT );
+	return array( 'post', 'page', NSW_THEME_CPT_DOCUMENT, NSW_THEME_CPT_EVENT, NSW_THEME_CPT_SERVICE );
 }
 
 /* --------------------------------------------------------------------------

@@ -428,6 +428,21 @@ function nsw_theme_block_single_post(): string {
 	return $out;
 }
 
+/* ---- Single service guide (public CPT) ---- */
+
+function nsw_theme_block_single_service(): string {
+	$queried = get_queried_object();
+	if ( ! $queried instanceof WP_Post ) {
+		return '';
+	}
+	global $post;
+	$post = $queried;
+	setup_postdata( $post );
+	$out = nsw_theme_capture_part( 'template-parts/single-service' );
+	wp_reset_postdata();
+	return $out;
+}
+
 /* ---- 404 (translatable via nsw_theme_t) ---- */
 
 function nsw_theme_block_not_found(): string {
@@ -471,6 +486,7 @@ add_action(
 			'nsw-theme/language-switcher' => array( 'nsw_theme_block_language_switcher', 'NSW Language Switcher' ),
 			'nsw-theme/news-list'        => array( 'nsw_theme_block_news_list', 'NSW News List' ),
 			'nsw-theme/single-post'      => array( 'nsw_theme_block_single_post', 'NSW Single Article' ),
+			'nsw-theme/single-service'   => array( 'nsw_theme_block_single_service', 'NSW Single Service' ),
 			'nsw-theme/not-found'        => array( 'nsw_theme_block_not_found', 'NSW Not Found (404)' ),
 			'nsw-theme/hero-home'        => array( 'nsw_theme_block_hero_home', 'NSW Home Hero' ),
 			'nsw-theme/stats'            => array( 'nsw_theme_block_stats', 'NSW Stats' ),
@@ -553,6 +569,123 @@ add_action(
 					'menu' => array( 'type' => 'string', 'default' => '' ),
 				),
 				'supports'        => array( 'html' => false, 'reusable' => false ),
+			)
+		);
+	}
+);
+
+/* ---- "Service guide" block pattern ----
+ * A starter skeleton for authoring a Trade Service guide (intro, Steps,
+ * Required documents, Fees, Processing time, Contact) so every guide keeps the
+ * same structure. Registered here — not as a patterns/ file — because the
+ * section headings come from the theme's Polylang string layer (nsw_theme_t),
+ * not gettext, matching every other bilingual string in this file.
+ *
+ * NOTE on language: the pattern content is a static string captured ONCE per
+ * request, at init, in the CURRENT locale — so the headings land in the
+ * language of the wp-admin editor session that inserts the pattern (officers
+ * editing in the Albanian admin get "Hapat", an English admin gets "Steps").
+ * That is the intended behavior: the inserted headings are plain content owned
+ * by the post's language from then on.
+ */
+add_action(
+	'init',
+	function () {
+		if ( ! function_exists( 'register_block_pattern' ) ) {
+			return;
+		}
+
+		register_block_pattern_category( 'nsw-theme', array( 'label' => __( 'NSW Theme', 'nsw-theme' ) ) );
+
+		$steps      = esc_html( nsw_theme_t( 'servicesPage.stepsTitle', 'Steps' ) );
+		$documents  = esc_html( nsw_theme_t( 'servicesPage.documentsTitle', 'Required documents' ) );
+		$fees       = esc_html( nsw_theme_t( 'servicesPage.feesTitle', 'Fees' ) );
+		$processing = esc_html( nsw_theme_t( 'servicesPage.processingTitle', 'Processing time' ) );
+		$contact    = esc_html( nsw_theme_t( 'servicesPage.contactTitle', 'Contact' ) );
+
+		$content = <<<HTML
+<!-- wp:paragraph -->
+<p>[Replace: one short paragraph — what this procedure is and who needs it.]</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">{$steps}</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list {"ordered":true} -->
+<ol class="wp-block-list"><!-- wp:list-item -->
+<li>[Replace: step 1 — e.g. register on the NSW portal.]</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li>[Replace: step 2 — e.g. submit the application with the documents below.]</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li>[Replace: step 3 — e.g. pay the service fee.]</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li>[Replace: step 4 — e.g. border inspection of the consignment.]</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li>[Replace: step 5 — e.g. receive the electronic permit.]</li>
+<!-- /wp:list-item --></ol>
+<!-- /wp:list -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">{$documents}</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li>[Replace: document 1]</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li>[Replace: document 2]</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li>[Replace: document 3]</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">{$fees}</h2>
+<!-- /wp:heading -->
+
+<!-- wp:table -->
+<figure class="wp-block-table"><table class="has-fixed-layout"><thead><tr><th>[Service]</th><th>[LEK]</th></tr></thead><tbody><tr><td>[Replace: fee item 1]</td><td>[amount]</td></tr><tr><td>[Replace: fee item 2]</td><td>[amount]</td></tr><tr><td>[Replace: fee item 3]</td><td>[amount]</td></tr></tbody></table></figure>
+<!-- /wp:table -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">{$processing}</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>[Replace: how long the procedure takes — e.g. 5 working days from payment confirmation.]</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">{$contact}</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>[Replace: the responsible agency's email, phone and office hours.]</p>
+<!-- /wp:paragraph -->
+HTML;
+
+		register_block_pattern(
+			'nsw-theme/service-guide',
+			array(
+				'title'       => __( 'Service guide', 'nsw-theme' ),
+				'description' => __( 'Starter structure for a Trade Service guide: intro, steps, required documents, fees, processing time and contact.', 'nsw-theme' ),
+				'categories'  => array( 'nsw-theme' ),
+				'postTypes'   => array( NSW_THEME_CPT_SERVICE ),
+				'blockTypes'  => array( 'core/post-content' ),
+				'content'     => $content,
 			)
 		);
 	}

@@ -1,12 +1,17 @@
 <?php
 /**
  * Agency Officers: scope a user to a single agency so they only see and write
- * that agency's News (core Posts).
+ * that agency's content, across every agency-scoped post type (core News Posts
+ * and Trade Services).
  *
  * - Each user can be assigned one agency (a field on their profile).
- * - Each News post carries an agency (auto for officers; a dropdown for admins).
- * - An Agency Officer only sees their agency's News in wp-admin, and can only
- *   edit/delete that agency's News.
+ * - Each scoped post carries an agency (auto for officers; a dropdown for admins).
+ * - An Agency Officer only sees their agency's items in wp-admin, and can only
+ *   edit/delete that agency's items.
+ *
+ * The set of scoped post types and their per-type agency meta key + approval-
+ * bypass capabilities is declared once in nsw_agency_scoped_types(); every
+ * section below loops that registry, so both types share one implementation.
  *
  * Agencies are keyed by their stable id (_nsw_theme_agency_id) so the link is
  * language-agnostic across the sq/en agency posts. Admins (manage_options) are
@@ -34,6 +39,31 @@ function nsw_agency_officer_role(): string {
 		}
 	}
 	return $slug = 'agency_officer';
+}
+
+/**
+ * Registry of agency-scoped post types.
+ *
+ * Each entry maps a post type to:
+ *  - 'meta':   the post meta key that stores the item's agency stable id.
+ *  - 'bypass': the capabilities that, if granted to the officer role, would let
+ *              officers skip admin approval (used only by the drift guard in
+ *              section 7 — theme code never adds or removes them).
+ *
+ * News ('post') behaves exactly as it always has; Services ('nsw_service') reuse
+ * the same machinery with their own meta key and dedicated capability set.
+ */
+function nsw_agency_scoped_types(): array {
+	return array(
+		'post'        => array(
+			'meta'   => '_nsw_news_agency',
+			'bypass' => array( 'publish_posts', 'edit_published_posts', 'delete_published_posts' ),
+		),
+		'nsw_service' => array(
+			'meta'   => '_nsw_service_agency',
+			'bypass' => array( 'publish_nsw_services', 'edit_published_nsw_services', 'delete_published_nsw_services' ),
+		),
+	);
 }
 
 /** The agency stable id assigned to a user ('' if none). */
@@ -81,25 +111,27 @@ function nsw_agency_choices(): array {
 }
 
 /* --------------------------------------------------------------------------
- * 1. News → agency meta
+ * 1. Scoped types → agency meta
  * -------------------------------------------------------------------------- */
 
 add_action(
 	'init',
 	function () {
-		register_post_meta(
-			'post',
-			'_nsw_news_agency',
-			array(
-				'show_in_rest'      => true,
-				'single'            => true,
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-				'auth_callback'     => function () {
-					return current_user_can( 'edit_posts' );
-				},
-			)
-		);
+		foreach ( nsw_agency_scoped_types() as $type => $conf ) {
+			register_post_meta(
+				$type,
+				$conf['meta'],
+				array(
+					'show_in_rest'      => true,
+					'single'            => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'auth_callback'     => function () {
+						return current_user_can( 'edit_posts' );
+					},
+				)
+			);
+		}
 	}
 );
 
@@ -131,7 +163,7 @@ function nsw_render_user_agency_field( $context = null ): void {
 						<option value="<?php echo esc_attr( $id ); ?>" <?php selected( $current, $id ); ?>><?php echo esc_html( $name ); ?></option>
 					<?php endforeach; ?>
 				</select>
-				<p class="description"><?php esc_html_e( 'An Agency Officer can only see and write News for this agency.', 'nsw-theme' ); ?></p>
+				<p class="description"><?php esc_html_e( 'An Agency Officer can only see and write content for this agency.', 'nsw-theme' ); ?></p>
 			</td>
 		</tr>
 	</table>
@@ -161,23 +193,32 @@ add_action( 'edit_user_profile_update', 'nsw_save_user_agency' );
 add_action( 'user_register', 'nsw_save_user_agency' );
 
 /* --------------------------------------------------------------------------
- * 3. News agency meta box (admins/editors choose; officers don't — auto-set)
+ * 3. Agency meta box, per scoped type (admins/editors choose; officers don't —
+ *    it's auto-set to their agency on save)
  * -------------------------------------------------------------------------- */
 
-add_action(
-	'add_meta_boxes_post',
-	function () {
-		if ( nsw_is_agency_officer() ) {
-			return; // officers can't pick — it's forced to their agency on save
+foreach ( array_keys( nsw_agency_scoped_types() ) as $nsw_scoped_type ) {
+	add_action(
+		'add_meta_boxes_' . $nsw_scoped_type,
+		function () use ( $nsw_scoped_type ) {
+			if ( nsw_is_agency_officer() ) {
+				return; // officers can't pick — it's forced to their agency on save
+			}
+			add_meta_box( 'nsw_agency_box', __( 'Agency', 'nsw-theme' ), 'nsw_render_agency_box', $nsw_scoped_type, 'side', 'default' );
 		}
-		add_meta_box( 'nsw_news_agency', __( 'Agency', 'nsw-theme' ), 'nsw_render_news_agency_box', 'post', 'side', 'default' );
-	}
-);
+	);
+}
+unset( $nsw_scoped_type );
 
-function nsw_render_news_agency_box( WP_Post $post ): void {
-	$current = (string) get_post_meta( $post->ID, '_nsw_news_agency', true );
-	wp_nonce_field( 'nsw_news_agency', 'nsw_news_agency_nonce' );
-	echo '<select name="nsw_news_agency" style="width:100%">';
+function nsw_render_agency_box( WP_Post $post ): void {
+	$types = nsw_agency_scoped_types();
+	$conf  = $types[ $post->post_type ] ?? null;
+	if ( ! $conf ) {
+		return;
+	}
+	$current = (string) get_post_meta( $post->ID, $conf['meta'], true );
+	wp_nonce_field( 'nsw_agency_box', 'nsw_agency_box_nonce' );
+	echo '<select name="nsw_agency_box" style="width:100%">';
 	echo '<option value="">' . esc_html__( '— None —', 'nsw-theme' ) . '</option>';
 	foreach ( nsw_agency_choices() as $id => $name ) {
 		printf( '<option value="%s" %s>%s</option>', esc_attr( $id ), selected( $current, $id, false ), esc_html( $name ) );
@@ -186,12 +227,17 @@ function nsw_render_news_agency_box( WP_Post $post ): void {
 }
 
 /* --------------------------------------------------------------------------
- * 4. On save, stamp the agency
+ * 4. On save, stamp the agency (one generic handler; unscoped types skip early)
  * -------------------------------------------------------------------------- */
 
 add_action(
-	'save_post_post',
-	function ( $post_id ) {
+	'save_post',
+	function ( $post_id, $post ) {
+		$types = nsw_agency_scoped_types();
+		$conf  = $types[ $post->post_type ] ?? null;
+		if ( ! $conf ) {
+			return; // not an agency-scoped type
+		}
 		if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || wp_is_post_revision( $post_id ) ) {
 			return;
 		}
@@ -199,25 +245,27 @@ add_action(
 			// Officers: always their own agency, no choice.
 			$agency = nsw_user_agency();
 			if ( '' !== $agency ) {
-				update_post_meta( $post_id, '_nsw_news_agency', $agency );
+				update_post_meta( $post_id, $conf['meta'], $agency );
 			}
 			return;
 		}
 		// Admins/editors: from the meta box.
-		if ( isset( $_POST['nsw_news_agency_nonce'] )
-			&& wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nsw_news_agency_nonce'] ) ), 'nsw_news_agency' ) ) {
-			$val = isset( $_POST['nsw_news_agency'] ) ? sanitize_text_field( wp_unslash( $_POST['nsw_news_agency'] ) ) : '';
+		if ( isset( $_POST['nsw_agency_box_nonce'] )
+			&& wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nsw_agency_box_nonce'] ) ), 'nsw_agency_box' ) ) {
+			$val = isset( $_POST['nsw_agency_box'] ) ? sanitize_text_field( wp_unslash( $_POST['nsw_agency_box'] ) ) : '';
 			if ( '' === $val ) {
-				delete_post_meta( $post_id, '_nsw_news_agency' );
+				delete_post_meta( $post_id, $conf['meta'] );
 			} else {
-				update_post_meta( $post_id, '_nsw_news_agency', $val );
+				update_post_meta( $post_id, $conf['meta'], $val );
 			}
 		}
-	}
+	},
+	10,
+	2
 );
 
 /* --------------------------------------------------------------------------
- * 5. Restrict the News list to the officer's agency
+ * 5. Restrict each scoped type's admin list to the officer's agency
  * -------------------------------------------------------------------------- */
 
 add_action(
@@ -227,7 +275,13 @@ add_action(
 			return;
 		}
 		global $pagenow;
-		if ( 'edit.php' !== $pagenow || 'post' !== ( $query->get( 'post_type' ) ?: 'post' ) ) {
+		if ( 'edit.php' !== $pagenow ) {
+			return;
+		}
+		$post_type = (string) ( $query->get( 'post_type' ) ?: 'post' );
+		$types     = nsw_agency_scoped_types();
+		$conf      = $types[ $post_type ] ?? null;
+		if ( ! $conf ) {
 			return;
 		}
 		if ( ! nsw_is_agency_officer() ) {
@@ -237,7 +291,7 @@ add_action(
 		$meta   = (array) $query->get( 'meta_query' );
 		// No agency assigned → match a value that never exists, so they see nothing.
 		$meta[] = array(
-			'key'     => '_nsw_news_agency',
+			'key'     => $conf['meta'],
 			'value'   => '' !== $agency ? $agency : '__nsw_no_agency__',
 			'compare' => '=',
 		);
@@ -246,14 +300,16 @@ add_action(
 );
 
 /* --------------------------------------------------------------------------
- * 6. Block editing/deleting another agency's News (even by direct URL)
+ * 6. Block editing/deleting another agency's content (even by direct URL)
  *
  * `copy_post` is PublishPress Revisions' entry gate for the "Revise" / submit-
- * revision flow. Once officers lack `edit_published_posts` (see section 7), that
- * flow — not the core Edit link (`edit_post`) — is how they touch PUBLISHED News,
- * so we must scope it to their agency too, or an officer could open a revision on
- * another agency's live post. We run at priority 10 (Revisions maps `copy_post`
- * at priority 5), so returning `do_not_allow` here still vetoes cross-agency.
+ * revision flow. Once officers lack `edit_published_*` (see section 7), that
+ * flow — not the core Edit link (`edit_post`) — is how they touch PUBLISHED
+ * items, so we must scope it to their agency too, or an officer could open a
+ * revision on another agency's live post. We run at priority 10 (Revisions maps
+ * `copy_post` at priority 5), so returning `do_not_allow` here still vetoes
+ * cross-agency. The scoped post type and its agency meta key come from the
+ * registry, so News and Services are enforced identically.
  * -------------------------------------------------------------------------- */
 
 add_filter(
@@ -267,14 +323,19 @@ add_filter(
 			return $caps;
 		}
 		$post_id = isset( $args[0] ) ? (int) $args[0] : 0;
-		if ( ! $post_id || 'post' !== get_post_type( $post_id ) ) {
+		if ( ! $post_id ) {
 			return $caps;
 		}
-		// Allow the brand-new auto-draft so officers can create News.
+		$types = nsw_agency_scoped_types();
+		$conf  = $types[ get_post_type( $post_id ) ] ?? null;
+		if ( ! $conf ) {
+			return $caps;
+		}
+		// Allow the brand-new auto-draft so officers can create content.
 		if ( 'auto-draft' === get_post_status( $post_id ) ) {
 			return $caps;
 		}
-		$post_agency  = (string) get_post_meta( $post_id, '_nsw_news_agency', true );
+		$post_agency  = (string) get_post_meta( $post_id, $conf['meta'], true );
 		$their_agency = nsw_user_agency( $user_id );
 		if ( '' === $their_agency || $post_agency !== $their_agency ) {
 			return array( 'do_not_allow' );
@@ -292,22 +353,23 @@ add_filter(
  * CONTRACT: the Agency Officer role's capabilities are POLICY, owned entirely by
  * the Members plugin UI (Members → Roles) and tuned per environment. Theme code
  * does NOT add, remove, or otherwise manipulate any role capability. The approval
- * workflow is a pure consequence of which boxes are ticked:
- *   - NEW News: WordPress core reads `publish_posts`. Unticked → officers get the
- *     "Submit for Review" flow (post saved `pending`, an admin publishes it);
- *     ticked → they publish live directly.
- *   - EDITS to PUBLISHED News: PublishPress Revisions reads `edit_published_posts`
+ * workflow is a pure consequence of which boxes are ticked, per scoped type:
+ *   - NEW items: WordPress core reads the type's `publish_*` cap. Unticked →
+ *     officers get the "Submit for Review" flow (saved `pending`, an admin
+ *     publishes it); ticked → they publish live directly.
+ *   - EDITS to PUBLISHED items: PublishPress Revisions reads `edit_published_*`
  *     (see rvy_is_full_editor in wp-content/plugins/revisionary/rvy_init-functions.php).
  *     Unticked → the officer is a non-full editor and edits route into the
  *     pending-revision approval queue for an admin to approve; ticked → they edit
- *     live posts directly. `delete_published_posts` likewise gates deleting live
- *     News outright.
+ *     live posts directly. `delete_published_*` likewise gates deleting live
+ *     items outright.
  *
- * So the whole approval path lives in those checkboxes. The theme enforces only
- * agency isolation (sections 1-6, 8) plus this visible guard: if the role still
- * carries any of the three approval-bypassing caps, warn admins so the drift is
- * obvious and fixable in the Members UI. This is a read-only check on page render
- * — no cap manipulation, no DB writes, no option storage.
+ * So the whole approval path lives in those checkboxes (three per scoped type).
+ * The theme enforces only agency isolation (sections 1-6, 8) plus this visible
+ * guard: if the role still carries any of the approval-bypassing caps for any
+ * scoped type, warn admins so the drift is obvious and fixable in the Members UI.
+ * This is a read-only check on page render — no cap manipulation, no DB writes,
+ * no option storage.
  * -------------------------------------------------------------------------- */
 
 add_action(
@@ -320,11 +382,12 @@ add_action(
 		if ( ! $role ) {
 			return;
 		}
-		$bypass  = array( 'publish_posts', 'edit_published_posts', 'delete_published_posts' );
 		$present = array();
-		foreach ( $bypass as $cap ) {
-			if ( $role->has_cap( $cap ) ) {
-				$present[] = $cap;
+		foreach ( nsw_agency_scoped_types() as $conf ) {
+			foreach ( $conf['bypass'] as $cap ) {
+				if ( $role->has_cap( $cap ) ) {
+					$present[] = $cap;
+				}
 			}
 		}
 		if ( ! $present ) {
@@ -334,7 +397,7 @@ add_action(
 			'<div class="notice notice-warning"><p>%s</p><p>%s</p></div>',
 			sprintf(
 				/* translators: %s: comma-separated list of WordPress capability slugs. */
-				esc_html__( 'The Agency Officer role can currently publish, edit, or delete live News directly, bypassing admin approval. Offending capabilities: %s.', 'nsw-theme' ),
+				esc_html__( 'The Agency Officer role can currently publish, edit, or delete live content directly, bypassing admin approval. Offending capabilities: %s.', 'nsw-theme' ),
 				'<code>' . implode( '</code>, <code>', array_map( 'esc_html', $present ) ) . '</code>'
 			),
 			esc_html__( 'Untick those capabilities in Members → Roles to restore the approval workflow.', 'nsw-theme' )
@@ -343,30 +406,33 @@ add_action(
 );
 
 /* --------------------------------------------------------------------------
- * 8. Agency column in the News list
+ * 8. Agency column in each scoped type's admin list
  * -------------------------------------------------------------------------- */
 
-add_filter(
-	'manage_post_posts_columns',
-	function ( $cols ) {
-		$cols['nsw_agency'] = __( 'Agency', 'nsw-theme' );
-		return $cols;
-	}
-);
-add_action(
-	'manage_post_posts_custom_column',
-	function ( $col, $post_id ) {
-		if ( 'nsw_agency' !== $col ) {
-			return;
+foreach ( nsw_agency_scoped_types() as $nsw_scoped_type => $nsw_scoped_conf ) {
+	add_filter(
+		'manage_' . $nsw_scoped_type . '_posts_columns',
+		function ( $cols ) {
+			$cols['nsw_agency'] = __( 'Agency', 'nsw-theme' );
+			return $cols;
 		}
-		$id = (string) get_post_meta( $post_id, '_nsw_news_agency', true );
-		if ( '' === $id ) {
-			echo '—';
-			return;
-		}
-		$names = nsw_agency_choices();
-		echo esc_html( $names[ $id ] ?? $id );
-	},
-	10,
-	2
-);
+	);
+	add_action(
+		'manage_' . $nsw_scoped_type . '_posts_custom_column',
+		function ( $col, $post_id ) use ( $nsw_scoped_conf ) {
+			if ( 'nsw_agency' !== $col ) {
+				return;
+			}
+			$id = (string) get_post_meta( $post_id, $nsw_scoped_conf['meta'], true );
+			if ( '' === $id ) {
+				echo '—';
+				return;
+			}
+			$names = nsw_agency_choices();
+			echo esc_html( $names[ $id ] ?? $id );
+		},
+		10,
+		2
+	);
+}
+unset( $nsw_scoped_type, $nsw_scoped_conf );

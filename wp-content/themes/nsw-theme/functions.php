@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'NSW_THEME_VERSION' ) ) {
-	define( 'NSW_THEME_VERSION', '0.9.0' );
+	define( 'NSW_THEME_VERSION', '0.10.0' );
 }
 if ( ! defined( 'NSW_THEME_DIR' ) ) {
 	define( 'NSW_THEME_DIR', trailingslashit( get_template_directory() ) );

@@ -1,10 +1,11 @@
 <?php
 /**
- * Custom post types: nsw_event, nsw_document, nsw_agency, nsw_partner, nsw_faq. News is core Posts.
+ * Custom post types: nsw_event, nsw_document, nsw_agency, nsw_partner, nsw_faq,
+ * nsw_service. News is core Posts.
  *
- * All four CPTs are managed in native wp-admin. News drives its own public
- * archive/single URLs; Events, Documents and Agencies have no public
- * permalink of their own and are rendered by page templates that query them.
+ * All CPTs are managed in native wp-admin. News and Services drive their own
+ * public single URLs; Events, Documents and Agencies have no public permalink of
+ * their own and are rendered by page templates that query them.
  *
  * @package NSW_Theme
  */
@@ -19,6 +20,7 @@ const NSW_THEME_CPT_DOCUMENT = 'nsw_document';
 const NSW_THEME_CPT_AGENCY   = 'nsw_agency';
 const NSW_THEME_CPT_PARTNER  = 'nsw_partner';
 const NSW_THEME_CPT_FAQ      = 'nsw_faq';
+const NSW_THEME_CPT_SERVICE  = 'nsw_service';
 
 add_action(
 	'init',
@@ -205,6 +207,47 @@ add_action(
 				'taxonomies'         => array( 'nsw_faq_category' ),
 			)
 		);
+
+		/* Services — the ONLY public CPT. Each service is a real page with its
+		   own permalink under /sherbime/, authored as blocks (steps / documents
+		   / fees) in post_content; that body content is what PublishPress
+		   Revisions tracks for approval. The Services list page (wizard) lives
+		   at the shared /sherbime/ base and queries these. Dedicated
+		   capability_type so agency officers get a scoped, approval-gated cap
+		   set (granted per environment in Members). */
+		register_post_type(
+			NSW_THEME_CPT_SERVICE,
+			array(
+				'labels'             => array(
+					'name'          => __( 'Services',           'nsw-theme' ),
+					'singular_name' => __( 'Service',            'nsw-theme' ),
+					'menu_name'     => __( 'Services',           'nsw-theme' ),
+					'add_new_item'  => __( 'Add New Service',    'nsw-theme' ),
+					'edit_item'     => __( 'Edit Service',       'nsw-theme' ),
+					'view_item'     => __( 'View Service',       'nsw-theme' ),
+					'all_items'     => __( 'All Services',       'nsw-theme' ),
+					'search_items'  => __( 'Search Services',    'nsw-theme' ),
+					'not_found'     => __( 'No services found.', 'nsw-theme' ),
+				),
+				'public'             => true,
+				'publicly_queryable' => true,
+				'show_ui'            => true,
+				'show_in_menu'       => true,
+				'show_in_admin_bar'  => true,
+				'show_in_nav_menus'  => false,
+				'show_in_rest'       => true,
+				'has_archive'        => false,
+				'rewrite'            => array( 'slug' => 'sherbime', 'with_front' => false ),
+				'menu_icon'          => 'dashicons-clipboard',
+				'menu_position'      => 11,
+				// Keeps 'editor': the guide body (steps/docs/fees) is authored as
+				// blocks in post_content — that's what Revisions approval tracks.
+				// 'custom-fields' exposes the registered meta to the REST API.
+				'supports'           => array( 'title', 'editor', 'excerpt', 'thumbnail', 'author', 'revisions', 'custom-fields' ),
+				'capability_type'    => array( 'nsw_service', 'nsw_services' ),
+				'map_meta_cap'       => true,
+			)
+		);
 	}
 );
 
@@ -233,6 +276,18 @@ add_action(
 		);
 	}
 );
+
+/**
+ * Sanitize the service operation-type meta: a comma-separated list restricted to
+ * the whitelist (import, export, transit). Splits on commas, keeps only allowed
+ * values, dedupes, and rejoins. An empty string is valid (no operations chosen).
+ */
+function nsw_theme_sanitize_service_type( $value ): string {
+	$allowed  = array( 'import', 'export', 'transit' );
+	$parts    = array_map( 'trim', explode( ',', (string) $value ) );
+	$filtered = array_values( array_unique( array_intersect( $parts, $allowed ) ) );
+	return implode( ',', $filtered );
+}
 
 /**
  * Register custom meta for REST exposure (so the block editor and theme can read it cleanly).
@@ -290,6 +345,25 @@ add_action(
 		$register( NSW_THEME_CPT_PARTNER, '_nsw_theme_partner_color',   'string' );
 		$register( NSW_THEME_CPT_PARTNER, '_nsw_theme_partner_website', 'string' );
 		$register( NSW_THEME_CPT_PARTNER, '_nsw_theme_partner_logo_bg', 'string' );
+
+		// Service meta. Operation type is a comma-separated multi-value whitelist
+		// (import/export/transit), so it is registered here directly rather than via
+		// the $register helper — it needs the custom CSV sanitizer, not
+		// sanitize_text_field. The agency link meta (_nsw_service_agency) is
+		// registered alongside News in inc/agency-news.php.
+		register_post_meta(
+			NSW_THEME_CPT_SERVICE,
+			'_nsw_theme_service_type',
+			array(
+				'show_in_rest'      => true,
+				'single'            => true,
+				'type'              => 'string',
+				'auth_callback'     => function () {
+					return current_user_can( 'edit_posts' );
+				},
+				'sanitize_callback' => 'nsw_theme_sanitize_service_type',
+			)
+		);
 	}
 );
 
@@ -305,6 +379,7 @@ add_filter(
 	function ( $types, $is_settings ) {
 		$types[ NSW_THEME_CPT_AGENCY ]  = NSW_THEME_CPT_AGENCY;
 		$types[ NSW_THEME_CPT_PARTNER ] = NSW_THEME_CPT_PARTNER;
+		$types[ NSW_THEME_CPT_SERVICE ] = NSW_THEME_CPT_SERVICE;
 		return $types;
 	},
 	10,
@@ -312,11 +387,12 @@ add_filter(
 );
 
 /**
- * Meta that is identical across an agency/partner's translations. Polylang
- * copies these when a new translation is first created and keeps them in sync
- * on save, so brand colour / website / logo / type live in one place. The
- * per-language copy (name, abbreviation, description, documents) is intentionally
- * NOT listed here.
+ * Meta that is identical across an agency's / partner's / service's translations.
+ * Polylang copies these when a new translation is first created and keeps them in
+ * sync on save, so brand colour / website / logo / type live in one place. For
+ * services, the operation type and the responsible agency are the same fact in
+ * both languages, so they are shared too. The per-language copy (name,
+ * abbreviation, description, documents) is intentionally NOT listed here.
  */
 add_filter(
 	'pll_copy_post_metas',
@@ -333,6 +409,8 @@ add_filter(
 				'_nsw_theme_partner_color',
 				'_nsw_theme_partner_website',
 				'_nsw_theme_partner_logo_bg',
+				'_nsw_theme_service_type',
+				'_nsw_service_agency',
 			)
 		);
 	}
@@ -346,4 +424,27 @@ add_action(
 	function () {
 		flush_rewrite_rules();
 	}
+);
+
+/**
+ * Deploy-safe, version-keyed rewrite flush.
+ *
+ * WHY: production deploys are `git pull`, which swap the theme files WITHOUT
+ * firing `after_switch_theme` — so a newly added CPT rewrite (the public
+ * /sherbime/<slug> service singles) would 404 until an admin manually re-saved
+ * Settings → Permalinks. This flushes exactly once per theme version: the first
+ * `init` after a deploy that bumped NSW_THEME_VERSION, at priority 99 so every
+ * post type and rewrite is already registered. The recorded version keeps it
+ * from re-flushing on subsequent requests.
+ */
+add_action(
+	'init',
+	function () {
+		if ( get_option( 'nsw_theme_rewrite_version' ) === NSW_THEME_VERSION ) {
+			return;
+		}
+		flush_rewrite_rules( false );
+		update_option( 'nsw_theme_rewrite_version', NSW_THEME_VERSION, true );
+	},
+	99
 );
