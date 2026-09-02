@@ -146,9 +146,33 @@ function nsw_theme_field( array $attributes, string $key, string $fallback = '' 
  *      editable under Languages → Strings). Composed as blocks in
  *      parts/footer.html so the footer columns are rearrangeable. ---- */
 
+/**
+ * Pick the brand-logo SVG filename for the CURRENT Polylang language, straight from
+ * the theme (no Media Library). EN → English lockup; SQ / default → Albanian lockup.
+ *
+ * @param bool $light Return the reversed (white) variant for dark backgrounds.
+ */
+function nsw_theme_brand_logo_file( bool $light = false ): string {
+	$slug = function_exists( 'pll_current_language' ) ? (string) pll_current_language( 'slug' ) : '';
+	$en   = ( 'en' === $slug );
+	if ( $light ) {
+		return $en ? 'nsw-albania-logo-red-light.svg' : 'nsw-logo-alb-light.svg';
+	}
+	return $en ? 'nsw-logo.svg' : 'nsw-logo-alb.svg';
+}
+
+/** Header brand logo — language-aware, read from the theme (replaces the core Site Logo). */
+function nsw_theme_block_brand_logo(): string {
+	$file = nsw_theme_brand_logo_file( false );
+	return '<a class="custom-logo-link site-header__logo" href="' . esc_url( nsw_theme_home_url() ) . '" rel="home">'
+		. '<img class="custom-logo" src="' . esc_url( NSW_THEME_URI . 'assets/images/logos/' . $file ) . '" alt="'
+		. esc_attr( get_bloginfo( 'name' ) ) . '" width="185" /></a>';
+}
+
 function nsw_theme_block_footer_logo(): string {
+	$file = nsw_theme_brand_logo_file( true );
 	return '<a class="site-footer__logo" href="' . esc_url( nsw_theme_home_url() ) . '">'
-		. '<img src="' . esc_url( NSW_THEME_URI . 'assets/images/logos/nsw-albania-logo-red-light.svg' ) . '" alt="'
+		. '<img src="' . esc_url( NSW_THEME_URI . 'assets/images/logos/' . $file ) . '" alt="'
 		. esc_attr__( 'NSW Albania — National Single Window', 'nsw-theme' ) . '" width="185" height="60" /></a>';
 }
 
@@ -479,6 +503,7 @@ add_action(
 	'init',
 	function () {
 		$blocks = array(
+			'nsw-theme/brand-logo'       => array( 'nsw_theme_block_brand_logo', 'NSW Brand Logo (header)' ),
 			'nsw-theme/footer-logo'      => array( 'nsw_theme_block_footer_logo', 'NSW Footer Logo' ),
 			'nsw-theme/footer-contact'   => array( 'nsw_theme_block_footer_contact', 'NSW Footer Contact' ),
 			'nsw-theme/page-hero'        => array( 'nsw_theme_block_page_hero', 'NSW Page Hero' ),
