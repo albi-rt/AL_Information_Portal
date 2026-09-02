@@ -158,6 +158,77 @@ function nsw_theme_save_event_meta( int $post_id, WP_Post $post ): void {
 }
 
 /* --------------------------------------------------------------------------
+ * Service details
+ *
+ * Which trade operations a service applies to: import / export / transit, as
+ * checkboxes (a service can apply to more than one). Stored as a single
+ * comma-separated meta value (_nsw_theme_service_type), matching the whitelist
+ * sanitizer registered in inc/post-types.php.
+ * -------------------------------------------------------------------------- */
+
+add_action(
+	'add_meta_boxes',
+	function () {
+		add_meta_box(
+			'nsw_theme_service_details',
+			__( 'Service details', 'nsw-theme' ),
+			'nsw_theme_render_service_meta_box',
+			NSW_THEME_CPT_SERVICE,
+			'side',
+			'high'
+		);
+	}
+);
+
+function nsw_theme_render_service_meta_box( WP_Post $post ): void {
+	wp_nonce_field( 'nsw_theme_service_meta', 'nsw_theme_service_meta_nonce' );
+	$raw      = (string) get_post_meta( $post->ID, '_nsw_theme_service_type', true );
+	$selected = array_filter( array_map( 'trim', explode( ',', $raw ) ) );
+	$options  = array(
+		'import'  => nsw_theme_t( 'servicesPage.types.import' ),
+		'export'  => nsw_theme_t( 'servicesPage.types.export' ),
+		'transit' => nsw_theme_t( 'servicesPage.types.transit' ),
+	);
+	?>
+	<p class="description" style="margin-top:0">
+		<?php esc_html_e( 'Which trade operations this service applies to. Tick all that apply.', 'nsw-theme' ); ?>
+	</p>
+	<?php foreach ( $options as $value => $label ) : ?>
+		<p style="margin:6px 0">
+			<label>
+				<input type="checkbox" name="nsw_theme_service_type[]" value="<?php echo esc_attr( $value ); ?>" <?php checked( in_array( $value, $selected, true ) ); ?>>
+				<?php echo esc_html( $label ); ?>
+			</label>
+		</p>
+	<?php endforeach; ?>
+	<?php
+}
+
+add_action( 'save_post_' . NSW_THEME_CPT_SERVICE, 'nsw_theme_save_service_meta', 10, 2 );
+function nsw_theme_save_service_meta( int $post_id, WP_Post $post ): void {
+	if ( ! isset( $_POST['nsw_theme_service_meta_nonce'] )
+		|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nsw_theme_service_meta_nonce'] ) ), 'nsw_theme_service_meta' ) ) {
+		return;
+	}
+	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+		return;
+	}
+	if ( ! current_user_can( 'edit_post', $post_id ) ) {
+		return;
+	}
+
+	$allowed = array( 'import', 'export', 'transit' );
+	$posted  = isset( $_POST['nsw_theme_service_type'] ) ? (array) wp_unslash( $_POST['nsw_theme_service_type'] ) : array();
+	$posted  = array_map( 'sanitize_text_field', $posted );
+	$csv     = implode( ',', array_values( array_intersect( $allowed, $posted ) ) );
+	if ( '' === $csv ) {
+		delete_post_meta( $post_id, '_nsw_theme_service_type' );
+	} else {
+		update_post_meta( $post_id, '_nsw_theme_service_type', $csv );
+	}
+}
+
+/* --------------------------------------------------------------------------
  * Document file + size
  * -------------------------------------------------------------------------- */
 

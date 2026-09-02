@@ -257,6 +257,62 @@
 		});
 	}
 
+	function initServicesWizard() {
+		var container = document.querySelector("[data-services-wizard]");
+		if (!container) return;
+		var pills = container.querySelectorAll("[data-service-pill]");
+		var items = container.querySelectorAll("[data-service-item]");
+		var empty = container.querySelector("[data-services-empty]");
+		var agencyInput = container.querySelector(".services-wizard__control--agency [data-select-input]");
+		var type = "all";
+		var agency = "";
+
+		function applyFilter() {
+			var anyVisible = false;
+			items.forEach(function (item) {
+				var cardTypes = (item.getAttribute("data-service-types") || "").split(/\s+/);
+				var cardAgency = item.getAttribute("data-service-agency") || "";
+				var typeMatch = type === "all" || cardTypes.indexOf(type) !== -1;
+				var agencyMatch = agency === "" || cardAgency === agency;
+				var visible = typeMatch && agencyMatch;
+				item.style.display = visible ? "" : "none";
+				if (visible) {
+					item.removeAttribute("aria-hidden");
+					anyVisible = true;
+				} else {
+					item.setAttribute("aria-hidden", "true");
+				}
+			});
+			if (empty) {
+				if (anyVisible) empty.setAttribute("hidden", "");
+				else empty.removeAttribute("hidden");
+			}
+		}
+
+		pills.forEach(function (pill) {
+			pill.addEventListener("click", function () {
+				var value = pill.getAttribute("data-service-pill") || "all";
+				if (type === value && value !== "all") type = "all";
+				else type = value;
+				pills.forEach(function (p) {
+					var on = p.getAttribute("data-service-pill") === type || (type === "all" && p.getAttribute("data-service-pill") === "all");
+					p.classList.toggle("is-active", on);
+					p.setAttribute("aria-pressed", on ? "true" : "false");
+				});
+				applyFilter();
+			});
+		});
+
+		if (agencyInput) {
+			agencyInput.addEventListener("change", function () {
+				agency = agencyInput.value || "";
+				applyFilter();
+			});
+		}
+
+		applyFilter();
+	}
+
 	function initSelects(root) {
 		var scope = root || document;
 		var selects = scope.querySelectorAll("[data-select]");
@@ -540,6 +596,7 @@
 		initFaqFilter();
 		initNewsFilter();
 		initSelects();
+		initServicesWizard();
 		initContactForm();
 		initAccordions();
 	});

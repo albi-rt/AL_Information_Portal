@@ -83,6 +83,11 @@ function nsw_theme_block_events(): string {
 		. nsw_theme_capture_part( 'template-parts/sections/events' );
 }
 
+function nsw_theme_block_services(): string {
+	return nsw_theme_data_hero()
+		. nsw_theme_capture_part( 'template-parts/sections/services' );
+}
+
 function nsw_theme_block_contact_form(): string {
 	return nsw_theme_data_hero()
 		. nsw_theme_capture_part( 'template-parts/sections/contact-form' );
@@ -99,6 +104,7 @@ add_action(
 			'nsw-theme/faq'           => array( 'nsw_theme_block_faq', 'NSW FAQ' ),
 			'nsw-theme/documents'     => array( 'nsw_theme_block_documents', 'NSW Documents' ),
 			'nsw-theme/events'        => array( 'nsw_theme_block_events', 'NSW Events' ),
+			'nsw-theme/services'      => array( 'nsw_theme_block_services', 'NSW Trade Services' ),
 			'nsw-theme/contact-form'  => array( 'nsw_theme_block_contact_form', 'NSW Contact Form' ),
 		);
 		foreach ( $blocks as $name => $def ) {
