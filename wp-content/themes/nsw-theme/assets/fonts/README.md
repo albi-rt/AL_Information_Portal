@@ -1,10 +1,12 @@
 # Self-hosted fonts
 
-The main stylesheet references two variable font files that **need to be downloaded** into this directory before going live. Until they land here, the browser will fall back to system fonts (Segoe UI / Helvetica / etc.) — the site will still render, just without the brand typography.
+Brand typography from the NSW Albania brand package (2026), self-hosted here as
+latin + latin-ext woff2. No Google Fonts CDN — that's a GDPR liability for an EU
+government site (it sends visitor IP addresses to Google). The `@font-face` blocks
+live at the top of `assets/css/main.css`.
 
-- `InterVariable.woff2` — Inter Variable (regular through bold).
-  Source: https://github.com/rsms/inter/releases (download `Inter.zip`, take `web/InterVariable.woff2`).
-- `SourceSerif4Variable.woff2` — Source Serif 4 Variable.
-  Source: https://fonts.google.com/specimen/Source+Serif+4 (or https://github.com/adobe-fonts/source-serif).
+- **Open Sans** (body / primary) — `opensans-latin.woff2`, `opensans-latin-ext.woff2`
+- **Montserrat** (display / headings) — `montserrat-latin.woff2`, `montserrat-latin-ext.woff2`
 
-Both are SIL Open Font License — fine for redistribution. Don't link Google Fonts CDN: it's a GDPR liability for an EU government site (it sends IP addresses to Google).
+Variable woff2 covering weights 400–700, SIL Open Font License (free to redistribute),
+served originally from fonts.gstatic.com.
