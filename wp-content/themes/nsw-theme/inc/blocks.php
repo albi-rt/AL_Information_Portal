@@ -156,7 +156,7 @@ function nsw_theme_brand_logo_file( bool $light = false ): string {
 	$slug = function_exists( 'pll_current_language' ) ? (string) pll_current_language( 'slug' ) : '';
 	$en   = ( 'en' === $slug );
 	if ( $light ) {
-		return $en ? 'nsw-albania-logo-red-light.svg' : 'nsw-logo-alb-light.svg';
+		return $en ? 'nsw-logo-en-light.svg' : 'nsw-logo-alb-light.svg';
 	}
 	return $en ? 'nsw-logo.svg' : 'nsw-logo-alb.svg';
 }
