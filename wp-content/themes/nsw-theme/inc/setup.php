@@ -21,7 +21,7 @@ add_action(
 		if ( function_exists( 'has_site_icon' ) && has_site_icon() ) {
 			return;
 		}
-		echo '<link rel="icon" type="image/svg+xml" href="' . esc_url( NSW_THEME_URI . 'assets/images/logos/favicon.svg' ) . '" />' . "\n";
+		echo '<link rel="icon" type="image/svg+xml" href="' . esc_url( NSW_THEME_URI . 'assets/images/logos/favicon.svg?v=' . NSW_THEME_VERSION ) . '" />' . "\n";
 	}
 );
 
