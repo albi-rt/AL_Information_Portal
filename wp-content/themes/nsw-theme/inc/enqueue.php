@@ -78,14 +78,14 @@ add_action(
 		if ( function_exists( 'pll_get_post_language' ) ) {
 			$pid = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : ( function_exists( 'get_the_ID' ) ? (int) get_the_ID() : 0 );
 			if ( $pid ) {
-				$slug = pll_get_post_language( $pid, 'slug' );
-				if ( $slug ) {
-					$edit_lang = ( 'en' === $slug ) ? 'en' : 'sq';
+				$slug = (string) pll_get_post_language( $pid, 'slug' );
+				if ( '' !== $slug ) {
+					$edit_lang = $slug;
 				}
 			}
 		}
 		if ( null === $edit_lang ) {
-			$edit_lang = ( function_exists( 'pll_default_language' ) && 'en' === pll_default_language( 'slug' ) ) ? 'en' : 'sq';
+			$edit_lang = nsw_theme_default_locale();
 		}
 
 		// Fetch the field config with English-source defaults (force locale to en

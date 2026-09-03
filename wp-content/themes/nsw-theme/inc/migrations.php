@@ -37,34 +37,52 @@ function nsw_theme_migrations(): array {
 }
 
 /**
- * Create the Services list ("wizard") page in each language and link the pair as
- * Polylang translations. The page body is a single nsw-theme/services block, and
- * the page uses the "page-plain" template — like every other data page (FAQ,
- * Documents, Events, Agencies) — because the default page.html already renders
- * nsw-theme/page-hero and the services block prepends its own data hero, so the
- * default template would show the hero twice. Titles and subtitles are hardcoded
- * per language (the block itself is language-agnostic; it queries the active
- * language's services). Idempotent: an existing page at the slug is reused, never
+ * Create the Services list ("wizard") page in every Polylang language and link
+ * them as translations of one another. The page body is a single
+ * nsw-theme/services block, and the page uses the "page-plain" template — like
+ * every other data page (FAQ, Documents, Events, Agencies) — because the default
+ * page.html already renders nsw-theme/page-hero and the services block prepends
+ * its own data hero, so the default template would show the hero twice.
+ *
+ * Nothing here is language-specific: the language list comes from Polylang, the
+ * slug from nsw_theme_path_slugs()['services'] (English slug as the fallback for
+ * a language with no entry), and the title/subtitle from the English source
+ * strings run through Polylang for that language. A language whose slug would
+ * collide with one already created is skipped, so two pages never fight over the
+ * same permalink. Idempotent: an existing page at the slug is reused, never
  * duplicated (and self-healed onto the page-plain template if it lacks it), and
- * the translation link is re-saved harmlessly.
+ * the translation links are re-saved harmlessly.
  */
 function nsw_theme_migrate_create_services_page(): void {
-	$pages = array(
-		'sq' => array(
-			'slug'     => 'sherbime',
-			'title'    => 'Shërbimet',
-			'subtitle' => 'Gjeni hapat, dokumentet dhe tarifat për çdo operacion importi, eksporti ose tranziti.',
-		),
-		'en' => array(
-			'slug'     => 'services',
-			'title'    => 'Services',
-			'subtitle' => 'Find the steps, documents and fees for any import, export or transit operation.',
-		),
-	);
+	$default = nsw_theme_default_locale();
+	$langs   = nsw_theme_locales();
+	if ( empty( $langs ) ) {
+		$langs = array( $default );
+	}
+	// Default language first, so which language wins a shared slug is
+	// deterministic rather than dependent on Polylang's term ordering.
+	$langs = array_values( array_unique( array_merge( array( $default ), $langs ) ) );
 
-	$ids = array();
-	foreach ( $pages as $lang => $def ) {
-		$existing = get_page_by_path( $def['slug'] );
+	$ids   = array();
+	$taken = array();
+	$prev  = nsw_theme_get_preview_locale();
+
+	foreach ( $langs as $lang ) {
+		$slug = (string) nsw_theme_path_slug( 'services', $lang );
+		if ( '' === $slug || isset( $taken[ $slug ] ) ) {
+			// Another language already claimed this slug (it has no localized
+			// entry of its own and fell back to English) — skip it rather than
+			// create a second page on the same path.
+			continue;
+		}
+		$taken[ $slug ] = true;
+
+		// Title/subtitle in this language: English source, translated by Polylang.
+		nsw_theme_set_preview_locale( $lang );
+		$title    = nsw_theme_t( 'nav.services', 'Services' );
+		$subtitle = nsw_theme_t( 'servicesPage.subtitle', 'Find the steps, documents and fees for any import, export or transit operation.' );
+
+		$existing = get_page_by_path( $slug );
 		if ( $existing instanceof WP_Post ) {
 			$page_id = (int) $existing->ID;
 			// Self-heal: an already-existing page must also use the plain
@@ -76,9 +94,9 @@ function nsw_theme_migrate_create_services_page(): void {
 			$page_id = wp_insert_post(
 				array(
 					'post_type'     => 'page',
-					'post_name'     => $def['slug'],
-					'post_title'    => $def['title'],
-					'post_excerpt'  => $def['subtitle'],
+					'post_name'     => $slug,
+					'post_title'    => $title,
+					'post_excerpt'  => $subtitle,
 					'post_status'   => 'publish',
 					'post_content'  => '<!-- wp:nsw-theme/services /-->',
 					'page_template' => 'page-plain',
@@ -96,7 +114,9 @@ function nsw_theme_migrate_create_services_page(): void {
 		$ids[ $lang ] = $page_id;
 	}
 
-	if ( count( $ids ) === count( $pages ) && function_exists( 'pll_save_post_translations' ) ) {
+	nsw_theme_set_preview_locale( $prev );
+
+	if ( count( $ids ) > 1 && function_exists( 'pll_save_post_translations' ) ) {
 		pll_save_post_translations( $ids );
 	}
 }

@@ -121,7 +121,7 @@ add_action(
 					),
 					'lang'        => array(
 						'type'              => 'string',
-						'enum'              => array( 'sq', 'en' ),
+						'enum'              => nsw_rest_supported_langs(),
 						'validate_callback' => 'rest_validate_request_arg',
 						'sanitize_callback' => 'sanitize_key',
 					),
@@ -180,20 +180,27 @@ function nsw_rest_content_permission( WP_REST_Request $request ) {
  * -------------------------------------------------------------------------- */
 
 /**
- * The effective language for a request: explicit `lang`, else Polylang default.
+ * The languages the endpoint accepts — every language configured in Polylang.
+ * Evaluated at rest_api_init (when Polylang is loaded), so adding a language in
+ * wp-admin widens the endpoint with no code change. Falls back to the historic
+ * sq/en pair only when Polylang is inactive.
+ *
+ * @return string[]
+ */
+function nsw_rest_supported_langs(): array {
+	$langs = function_exists( 'nsw_theme_locales' ) ? nsw_theme_locales() : array();
+	return ! empty( $langs ) ? $langs : array( 'sq', 'en' );
+}
+
+/**
+ * The effective language for a request: explicit `lang`, else the site default.
  */
 function nsw_rest_resolve_lang( WP_REST_Request $request ): string {
 	$lang = (string) ( $request['lang'] ?? '' );
 	if ( '' !== $lang ) {
 		return $lang;
 	}
-	if ( function_exists( 'pll_default_language' ) ) {
-		$default = (string) pll_default_language( 'slug' );
-		if ( '' !== $default ) {
-			return $default;
-		}
-	}
-	return 'sq';
+	return nsw_theme_default_locale();
 }
 
 /**

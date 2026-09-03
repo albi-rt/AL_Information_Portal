@@ -30,14 +30,11 @@ function nsw_theme_home_url(): string {
  * once installed.
  */
 function nsw_theme_path_url( string $key ): string {
-	$slugs = nsw_theme_path_slugs();
-	$locale = nsw_theme_current_locale();
+	$slug = nsw_theme_path_slug( $key );
 
-	if ( ! isset( $slugs[ $key ] ) ) {
+	if ( null === $slug ) {
 		return home_url( '/' . ltrim( $key, '/' ) );
 	}
-
-	$slug = $slugs[ $key ][ $locale ] ?? $slugs[ $key ]['en'];
 
 	if ( nsw_theme_has_polylang() ) {
 		$page = get_page_by_path( $slug );
@@ -53,7 +50,31 @@ function nsw_theme_path_url( string $key ): string {
 }
 
 /**
- * Slugs per logical key, per locale. Mirrors i18n/routing.ts in the Next.js source.
+ * The slug for a logical path key in a locale, or null when the key is unknown.
+ *
+ * A locale with no entry in the map falls back to the ENGLISH entry, so adding
+ * a language never 404s and never needs a code change — only map entries.
+ */
+function nsw_theme_path_slug( string $key, ?string $locale = null ): ?string {
+	$slugs = nsw_theme_path_slugs();
+	if ( ! isset( $slugs[ $key ] ) ) {
+		return null;
+	}
+	$locale = $locale ?: nsw_theme_current_locale();
+	$map    = (array) $slugs[ $key ];
+
+	if ( isset( $map[ $locale ] ) ) {
+		return (string) $map[ $locale ];
+	}
+	return isset( $map['en'] ) ? (string) $map['en'] : null;
+}
+
+/**
+ * Slugs per logical key, keyed by locale slug. Mirrors i18n/routing.ts in the
+ * Next.js source.
+ *
+ * Not every locale needs an entry: nsw_theme_path_slug() falls back to 'en'.
+ * To localize the paths for a new language, add its slug to each row here.
  */
 function nsw_theme_path_slugs(): array {
 	return array(
