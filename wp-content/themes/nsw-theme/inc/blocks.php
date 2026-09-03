@@ -147,18 +147,32 @@ function nsw_theme_field( array $attributes, string $key, string $fallback = '' 
  *      parts/footer.html so the footer columns are rearrangeable. ---- */
 
 /**
- * Pick the brand-logo SVG filename for the CURRENT Polylang language, straight from
- * the theme (no Media Library). EN → English lockup; SQ / default → Albanian lockup.
+ * Brand-logo SVG filenames per locale, straight from the theme (no Media
+ * Library). Each row has the 'dark' (on light backgrounds) and 'light'
+ * (reversed, for dark backgrounds) lockup. A locale with no row of its own uses
+ * 'default', so adding a language's logo is a map entry, not a code change.
+ *
+ * @return array<string, array{dark: string, light: string}>
+ */
+function nsw_theme_brand_logo_files(): array {
+	$en = array( 'dark' => 'nsw-logo.svg', 'light' => 'nsw-logo-en-light.svg' );
+	$sq = array( 'dark' => 'nsw-logo-alb.svg', 'light' => 'nsw-logo-alb-light.svg' );
+	return array(
+		'en'      => $en,
+		'sq'      => $sq,
+		'default' => $sq,
+	);
+}
+
+/**
+ * Pick the brand-logo SVG filename for the current locale.
  *
  * @param bool $light Return the reversed (white) variant for dark backgrounds.
  */
 function nsw_theme_brand_logo_file( bool $light = false ): string {
-	$slug = function_exists( 'pll_current_language' ) ? (string) pll_current_language( 'slug' ) : '';
-	$en   = ( 'en' === $slug );
-	if ( $light ) {
-		return $en ? 'nsw-logo-en-light.svg' : 'nsw-logo-alb-light.svg';
-	}
-	return $en ? 'nsw-logo.svg' : 'nsw-logo-alb.svg';
+	$files = nsw_theme_brand_logo_files();
+	$row   = $files[ nsw_theme_current_locale() ] ?? $files['default'];
+	return $row[ $light ? 'light' : 'dark' ];
 }
 
 /** Header brand logo — language-aware, read from the theme (replaces the core Site Logo). */
@@ -378,16 +392,20 @@ function nsw_theme_block_news_list(): string {
  * Polylang (free) doesn't swap the core Navigation block's menu per language,
  * so this thin wrapper renders the correct-language block menu. The menus are
  * still real, Site-Editor-editable core Navigation menus (Appearance → Editor →
- * Navigation): "NSW Primary" (sq) and "NSW Primary (EN)".
+ * Navigation).
  */
 /**
  * Render a block Navigation menu for the current language. Menus are stored as
- * wp_navigation posts ("$base_slug" for sq, "$base_slug-en" for en) and are
- * editable in the Site Editor → Navigation.
+ * wp_navigation posts: "$base_slug" for the site's DEFAULT language and
+ * "$base_slug-{locale}" for every other one (e.g. "nsw-primary-en"). Adding a
+ * language therefore only means adding a menu with the matching slug in the
+ * Site Editor. Falls back to the default-language menu when a translated menu
+ * doesn't exist yet.
  */
 function nsw_theme_render_block_nav( string $base_slug, string $overlay = 'never' ): string {
-	$slug = ( 'en' === nsw_theme_current_locale() ) ? $base_slug . '-en' : $base_slug;
-	$nav  = get_page_by_path( $slug, OBJECT, 'wp_navigation' );
+	$locale = nsw_theme_current_locale();
+	$slug   = ( $locale === nsw_theme_default_locale() ) ? $base_slug : $base_slug . '-' . $locale;
+	$nav    = get_page_by_path( $slug, OBJECT, 'wp_navigation' );
 	if ( ! $nav ) {
 		$nav = get_page_by_path( $base_slug, OBJECT, 'wp_navigation' );
 	}
@@ -401,7 +419,7 @@ function nsw_theme_block_primary_nav(): string {
 	return nsw_theme_render_block_nav( 'nsw-primary', 'mobile' );
 }
 
-/* ---- Language switcher (SQ | EN pills, active = primary button) ---- */
+/* ---- Language switcher (one pill per Polylang language, active = primary) ---- */
 
 function nsw_theme_block_language_switcher(): string {
 	if ( ! function_exists( 'pll_the_languages' ) ) {
@@ -412,6 +430,10 @@ function nsw_theme_block_language_switcher(): string {
 			'raw'                    => 1,
 			'hide_if_no_translation' => 0,
 			'hide_current'           => 0,
+			// Every configured language always gets a pill, including one that
+			// has no published content yet (Polylang hides those by default) —
+			// otherwise a newly added locale is unreachable from the front end.
+			'hide_if_empty'          => 0,
 		)
 	);
 	if ( empty( $langs ) || ! is_array( $langs ) ) {

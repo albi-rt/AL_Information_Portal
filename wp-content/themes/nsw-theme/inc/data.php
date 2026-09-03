@@ -14,9 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Resolve a per-locale value from a record. Handles records shaped like
- *   [ 'sq' => '…', 'en' => '…' ]
- * and falls back to whichever locale exists.
+ * Resolve a per-locale value from a record. Handles records keyed by locale
+ * slug, e.g. [ 'sq' => '…', 'en' => '…' ], falling back in order: the requested
+ * locale → the site's default locale → English → whichever locale exists.
  */
 function nsw_theme_localized( $field, ?string $locale = null ) {
 	$locale = $locale ?: nsw_theme_current_locale();
@@ -25,14 +25,10 @@ function nsw_theme_localized( $field, ?string $locale = null ) {
 		return $field;
 	}
 
-	if ( isset( $field[ $locale ] ) && '' !== $field[ $locale ] ) {
-		return $field[ $locale ];
-	}
-	if ( isset( $field['sq'] ) && '' !== $field['sq'] ) {
-		return $field['sq'];
-	}
-	if ( isset( $field['en'] ) && '' !== $field['en'] ) {
-		return $field['en'];
+	foreach ( array( $locale, nsw_theme_default_locale(), 'en' ) as $try ) {
+		if ( isset( $field[ $try ] ) && '' !== $field[ $try ] ) {
+			return $field[ $try ];
+		}
 	}
 	$first = reset( $field );
 	return false === $first ? '' : $first;
@@ -285,8 +281,7 @@ function nsw_theme_event_post_to_array( WP_Post $post ): array {
  * nsw_faq_category term. Returns {id, category, question, answer} rows.
  */
 function nsw_theme_get_faq( ?string $locale = null ): array {
-	$locale = $locale ?: nsw_theme_current_locale();
-	$key    = 'sq' === $locale ? 'sq' : 'en';
+	$key = $locale ?: nsw_theme_current_locale();
 	static $cache = array();
 	if ( isset( $cache[ $key ] ) ) {
 		return $cache[ $key ];

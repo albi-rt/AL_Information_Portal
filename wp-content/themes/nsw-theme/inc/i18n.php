@@ -1,6 +1,6 @@
 <?php
 /**
- * Bilingual support — Polylang owns all translations.
+ * Multilingual support — Polylang owns all translations.
  *
  * English is the single source (languages/content-en.php). Every UI string is
  * registered with Polylang (Languages → String translations, group "NSW Theme")
@@ -9,7 +9,10 @@
  * translation in the target locale via pll_translate_string(), which is
  * locale-explicit (correct on the front end and in editor previews alike).
  *
- * Default locale: sq (Albanian). Secondary: en.
+ * The locale set and the default locale are NOT hardcoded: they come from
+ * Polylang at runtime (pll_languages_list / pll_current_language /
+ * pll_default_language), so the theme works with any set of languages. When
+ * Polylang is inactive we fall back to the WordPress site locale.
  *
  * @package NSW_Theme
  */
@@ -23,6 +26,42 @@ function nsw_theme_has_polylang(): bool {
 }
 
 /**
+ * Every locale slug configured in Polylang, in Polylang's own order.
+ * Empty array when Polylang is inactive.
+ *
+ * @return string[]
+ */
+function nsw_theme_locales(): array {
+	if ( ! function_exists( 'pll_languages_list' ) ) {
+		return array();
+	}
+	$list = (array) pll_languages_list( array( 'fields' => 'slug' ) );
+	return array_values( array_filter( array_map( 'strval', $list ) ) );
+}
+
+/**
+ * The WordPress site locale reduced to a language slug (sq_AL → sq).
+ * Only used when Polylang can't answer.
+ */
+function nsw_theme_site_locale_slug(): string {
+	$slug = substr( strtolower( (string) determine_locale() ), 0, 2 );
+	return '' !== $slug ? $slug : 'en';
+}
+
+/**
+ * The site's default locale slug, per Polylang.
+ */
+function nsw_theme_default_locale(): string {
+	if ( function_exists( 'pll_default_language' ) ) {
+		$slug = (string) pll_default_language( 'slug' );
+		if ( '' !== $slug ) {
+			return $slug;
+		}
+	}
+	return nsw_theme_site_locale_slug();
+}
+
+/**
  * Editor-preview locale override.
  *
  * The block-editor's ServerSideRender previews hit /wp/v2/block-renderer, which
@@ -30,16 +69,26 @@ function nsw_theme_has_polylang(): bool {
  * default language. We derive the language from the edited post (post_id) and
  * pin it here for that render. Front-end is unaffected (this is only ever set on
  * a block-renderer REST request).
+ *
+ * Accepts any locale Polylang knows about (plus 'en', which is always valid as
+ * the source language — callers pin it to read untranslated source strings).
  */
 function nsw_theme_set_preview_locale( ?string $locale ): void {
-	$GLOBALS['nsw_theme_preview_locale'] = ( 'en' === $locale || 'sq' === $locale ) ? $locale : null;
+	$slug  = null !== $locale ? sanitize_key( $locale ) : '';
+	$known = nsw_theme_locales();
+	$valid = '' !== $slug && ( 'en' === $slug || empty( $known ) || in_array( $slug, $known, true ) );
+
+	$GLOBALS['nsw_theme_preview_locale'] = $valid ? $slug : null;
 }
 function nsw_theme_get_preview_locale(): ?string {
 	return $GLOBALS['nsw_theme_preview_locale'] ?? null;
 }
 
 /**
- * The active theme locale: 'sq' or 'en'.
+ * The active theme locale — the current Polylang language slug.
+ *
+ * Order: pinned editor-preview locale → Polylang's current language → the
+ * site's default language → the WordPress site locale (no Polylang).
  */
 function nsw_theme_current_locale(): string {
 	$preview = nsw_theme_get_preview_locale();
@@ -47,17 +96,19 @@ function nsw_theme_current_locale(): string {
 		return $preview;
 	}
 	if ( nsw_theme_has_polylang() ) {
-		$slug = pll_current_language( 'slug' );
-		if ( $slug ) {
-			return 'en' === $slug ? 'en' : 'sq';
+		$slug = (string) pll_current_language( 'slug' );
+		if ( '' !== $slug ) {
+			return $slug;
 		}
+		// Polylang is active but has no current language (some admin/CLI
+		// contexts): the site default is the closest correct answer.
+		return nsw_theme_default_locale();
 	}
-	$wp_locale = (string) determine_locale();
-	return 0 === strpos( $wp_locale, 'en' ) ? 'en' : 'sq';
+	return nsw_theme_site_locale_slug();
 }
 
 /**
- * The declared locale of a single post: 'sq' or 'en'.
+ * The declared locale of a single post.
  *
  * Polylang owns per-post language, so read it from there; fall back to the
  * active theme locale when Polylang can't resolve it (e.g. an untranslated
@@ -66,7 +117,7 @@ function nsw_theme_current_locale(): string {
 function nsw_theme_post_locale( int $post_id ): string {
 	if ( function_exists( 'pll_get_post_language' ) ) {
 		$slug = (string) pll_get_post_language( $post_id, 'slug' );
-		if ( 'en' === $slug || 'sq' === $slug ) {
+		if ( '' !== $slug ) {
 			return $slug;
 		}
 	}
@@ -185,9 +236,9 @@ add_filter(
 			if ( 0 === strpos( $route, '/wp/v2/block-renderer/' ) && function_exists( 'pll_get_post_language' ) ) {
 				$post_id = (int) $request->get_param( 'post_id' );
 				if ( $post_id > 0 ) {
-					$slug = pll_get_post_language( $post_id, 'slug' );
-					if ( $slug ) {
-						nsw_theme_set_preview_locale( 'en' === $slug ? 'en' : 'sq' );
+					$slug = (string) pll_get_post_language( $post_id, 'slug' );
+					if ( '' !== $slug ) {
+						nsw_theme_set_preview_locale( $slug );
 					}
 				}
 			}
