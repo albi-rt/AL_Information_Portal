@@ -125,7 +125,9 @@ return array (
       'submit' => 'Send Message',
       'success' => 'Your message was sent successfully! We will contact you as soon as possible.',
       'error' => 'An error occurred. Please try again.',
-      'errors' => 
+      'submitting' => 'Sending…',
+      'required' => 'Please fill out all required fields.',
+      'errors' =>
       array (
         'fullName' => 'Name must be at least 2 characters',
         'email' => 'Please enter a valid email address',
@@ -133,6 +135,9 @@ return array (
         'subject' => 'Subject must be at least 3 characters',
         'message' => 'Message must be at least 10 characters',
         'privacy' => 'You must accept the privacy policy',
+        'security' => 'Security check failed. Please reload the page and try again.',
+        'rateLimited' => 'Please wait a moment before sending again.',
+        'sendFailed' => 'Could not send the message. Please try again later.',
       ),
     ),
     'info' => 

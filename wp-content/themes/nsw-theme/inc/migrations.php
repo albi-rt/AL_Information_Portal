@@ -33,6 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 function nsw_theme_migrations(): array {
 	return array(
 		'create-services-page-2026-08' => 'nsw_theme_migrate_create_services_page',
+		'contact-form-sq-strings-2026-09' => 'nsw_theme_migrate_contact_form_sq_strings',
 	);
 }
 
@@ -98,6 +99,54 @@ function nsw_theme_migrate_create_services_page(): void {
 
 	if ( count( $ids ) === count( $pages ) && function_exists( 'pll_save_post_translations' ) ) {
 		pll_save_post_translations( $ids );
+	}
+}
+
+/**
+ * Seed the Albanian translations of the contact-form feedback strings
+ * (contactPage.form.*) in Polylang's string translations. Only fills strings
+ * that have NO Albanian translation yet — anything an editor already translated
+ * in Languages → String translations is left untouched. Idempotent.
+ */
+function nsw_theme_migrate_contact_form_sq_strings(): void {
+	if ( ! function_exists( 'PLL' ) || ! class_exists( 'PLL_MO' ) ) {
+		throw new RuntimeException( 'Polylang not active' ); // Retry on a later load.
+	}
+	$lang = PLL()->model->get_language( 'sq' );
+	if ( ! $lang ) {
+		return;
+	}
+
+	$sq = array(
+		'contactPage.form.submitting'         => 'Duke dërguar…',
+		'contactPage.form.success'            => 'Mesazhi juaj u dërgua me sukses! Do t’ju kontaktojmë sa më shpejt të jetë e mundur.',
+		'contactPage.form.error'              => 'Ndodhi një gabim. Ju lutemi provoni përsëri.',
+		'contactPage.form.required'           => 'Ju lutemi plotësoni të gjitha fushat e detyrueshme.',
+		'contactPage.form.errors.email'       => 'Ju lutemi vendosni një adresë email të vlefshme',
+		'contactPage.form.errors.subject'     => 'Subjekti duhet të ketë të paktën 3 karaktere',
+		'contactPage.form.errors.message'     => 'Mesazhi duhet të ketë të paktën 10 karaktere',
+		'contactPage.form.errors.security'    => 'Kontrolli i sigurisë dështoi. Ju lutemi rifreskoni faqen dhe provoni përsëri.',
+		'contactPage.form.errors.rateLimited' => 'Ju lutemi prisni pak përpara se të dërgoni përsëri.',
+		'contactPage.form.errors.sendFailed'  => 'Mesazhi nuk mund të dërgohej. Ju lutemi provoni përsëri më vonë.',
+	);
+
+	$en  = (array) nsw_theme_get_content( 'en' );
+	$mo  = new PLL_MO();
+	$mo->import_from_db( $lang );
+	$changed = false;
+	foreach ( $sq as $key => $translation ) {
+		$source = nsw_theme_dot_get( $en, $key );
+		if ( ! is_string( $source ) || '' === $source ) {
+			continue;
+		}
+		if ( '' !== $mo->translate_if_any( $source ) ) {
+			continue; // Already translated by an editor — keep theirs.
+		}
+		$mo->add_entry( $mo->make_entry( $source, $translation ) );
+		$changed = true;
+	}
+	if ( $changed ) {
+		$mo->export_to_db( $lang );
 	}
 }
 
