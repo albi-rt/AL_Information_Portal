@@ -34,11 +34,27 @@ add_action(
 				'restUrl' => esc_url_raw( rest_url( 'nsw-theme/v1/' ) ),
 				'nonce'   => wp_create_nonce( 'wp_rest' ),
 				'locale'  => nsw_theme_current_locale(),
+				// Contact-form feedback, in the page's language (Polylang string
+				// translations). `errors` maps the REST error codes returned by
+				// inc/contact-form.php (and WP's own REST validation) to messages,
+				// so the server's English-only error text is never shown to visitors.
 				'i18n'    => array(
-					'submitting' => __( 'Submitting…', 'nsw-theme' ),
-					'sent'       => __( 'Message sent. We will get back to you shortly.', 'nsw-theme' ),
-					'error'      => __( 'Something went wrong. Please try again.', 'nsw-theme' ),
-					'required'   => __( 'Please fill out all required fields.', 'nsw-theme' ),
+					'submitting' => nsw_theme_t( 'contactPage.form.submitting' ),
+					'sent'       => nsw_theme_t( 'contactPage.form.success' ),
+					'error'      => nsw_theme_t( 'contactPage.form.error' ),
+					'required'   => nsw_theme_t( 'contactPage.form.required' ),
+					'errors'     => array(
+						'nsw_theme_missing'           => nsw_theme_t( 'contactPage.form.required' ),
+						'rest_missing_callback_param' => nsw_theme_t( 'contactPage.form.required' ),
+						'nsw_theme_bad_email'         => nsw_theme_t( 'contactPage.form.errors.email' ),
+						'rest_invalid_param'          => nsw_theme_t( 'contactPage.form.errors.email' ),
+						'nsw_theme_short_subject'     => nsw_theme_t( 'contactPage.form.errors.subject' ),
+						'nsw_theme_short_message'     => nsw_theme_t( 'contactPage.form.errors.message' ),
+						'nsw_theme_bad_nonce'         => nsw_theme_t( 'contactPage.form.errors.security' ),
+						'rest_cookie_invalid_nonce'   => nsw_theme_t( 'contactPage.form.errors.security' ),
+						'nsw_theme_rate_limited'      => nsw_theme_t( 'contactPage.form.errors.rateLimited' ),
+						'nsw_theme_mail_failed'       => nsw_theme_t( 'contactPage.form.errors.sendFailed' ),
+					),
 				),
 			)
 		);

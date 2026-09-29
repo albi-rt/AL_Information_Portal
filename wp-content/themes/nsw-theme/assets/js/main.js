@@ -512,7 +512,10 @@
 						if (typeof sel._reset === "function") sel._reset();
 					});
 				} else {
-					feedback.textContent = (result.data && result.data.message) || I18N.error || "Error";
+					// Map the REST error code to a localized message; the server's
+					// own `message` is English-only and never shown.
+					var code = result.data && result.data.code;
+					feedback.textContent = (code && I18N.errors && I18N.errors[code]) || I18N.error || "Error";
 					feedback.classList.add("form__feedback--err");
 				}
 			}).catch(function () {
