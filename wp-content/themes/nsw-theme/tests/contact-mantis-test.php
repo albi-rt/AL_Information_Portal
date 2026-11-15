@@ -41,7 +41,7 @@ foreach ( $cf as $row ) { $byName[ $row['field']['name'] ] = $row['value']; }
 check( 'cf Customer Name',  ( $byName['Customer Name']  ?? '' ) === 'Jane Doe' );
 check( 'cf Customer Email', ( $byName['Customer Email'] ?? '' ) === 'jane@example.com' );
 check( 'cf Organization',   ( $byName['Organization']   ?? '' ) === 'ACME sh.p.k.' );
-check( 'cf Source Channel', ( $byName['Source Channel'] ?? '' ) === 'Portal' );
+check( 'cf Source Channel', ( $byName['Source Channel'] ?? '' ) === 'Information Portal' );
 
 // build_issue_payload
 $p = nsw_theme_contact_build_issue_payload( $data );

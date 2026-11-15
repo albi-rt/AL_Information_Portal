@@ -94,7 +94,7 @@ $ags['other'] = __( 'Other', 'nsw-theme' );
 
 					<div class="form__field">
 						<label class="form__label" for="contact-attachment"><?php echo esc_html( nsw_theme_t( 'contactPage.form.attachment', 'Attachment (optional, max 10MB)' ) ); ?></label>
-						<input id="contact-attachment" type="file" name="attachment" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+						<input id="contact-attachment" type="file" name="attachment" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" data-max-bytes="<?php echo esc_attr( (string) NSW_THEME_CONTACT_ATTACHMENT_MAX ); ?>" data-too-large="<?php esc_attr_e( 'The attachment must not be larger than 10 MB.', 'nsw-theme' ); ?>" />
 					</div>
 
 					<label class="form__check">

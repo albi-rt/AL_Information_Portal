@@ -167,4 +167,25 @@ return array (
   array (
     'services' => 'Services',
   ),
+  'contactForm' => 
+  array (
+    'messages' => 
+    array (
+      'sent' => 'Message sent.',
+      'submitting' => 'Submitting…',
+      'error' => 'Something went wrong. Please try again.',
+      'required' => 'Please fill out all required fields.',
+      'badNonce' => 'Security check failed.',
+      'rateLimited' => 'Please wait a moment before sending again.',
+      'missing' => 'Missing required fields.',
+      'badEmail' => 'Please enter a valid email.',
+      'shortSubject' => 'Subject is too short.',
+      'shortMessage' => 'Message is too short.',
+      'mailFailed' => 'Could not send the message. Please try again later.',
+      'helpDeskFailed' => 'Failed to create support request.',
+      'attachmentType' => 'The attachment must be a PDF, DOC, DOCX, JPG, JPEG or PNG file.',
+      'attachmentSize' => 'The attachment must not be larger than 10 MB.',
+      'attachmentFailed' => 'The attachment could not be uploaded. Please try again.',
+    ),
+  ),
 );

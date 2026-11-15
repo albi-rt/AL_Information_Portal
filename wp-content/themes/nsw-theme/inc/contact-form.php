@@ -2,14 +2,18 @@
 /**
  * Contact form — REST endpoint + MantisBT integration + customer confirmation email.
  *
- *   1. Validate required fields (fullName, email, category, subject, message).
- *   2. Create a MantisBT ticket via REST (see inc/contact-mantis.php).
+ *   1. Validate required fields (fullName, email, category, subject, message),
+ *      the privacy consent and the optional attachment.
+ *   2. Create a MantisBT ticket via REST (see inc/contact-mantis.php); the
+ *      attachment goes with it in base64 and is never stored on the website.
  *   3. Send a customer-facing confirmation email referencing NSWAL-<id>.
  *
- * Protections: wp_rest nonce, honeypot (`website`), per-IP 30s rate limit, length caps.
+ * Protections: wp_rest nonce, honeypot (`website`), per-IP 30s rate limit, length caps,
+ * attachment checked by name, content and size.
  *
- * Secrets (wp-config.php): NSW_THEME_MANTIS_URL, NSW_THEME_MANTIS_TOKEN,
- * NSW_THEME_MANTIS_PROJECT_ID, and (optional) NSW_THEME_SMTP_*.
+ * Settings (wp-config.php): NSW_THEME_MANTIS_URL, NSW_THEME_MANTIS_TOKEN,
+ * NSW_THEME_MANTIS_PROJECT_ID, and (optional) NSW_THEME_SMTP_*. The token and the
+ * SMTP password are read only from wp-config.php.
  *
  * @package NSW_Theme
  */
@@ -29,6 +33,7 @@ add_action( 'rest_api_init', function () {
             'agency'       => array( 'type' => 'string' ),
             'subject'      => array( 'type' => 'string', 'required' => true ),
             'message'      => array( 'type' => 'string', 'required' => true ),
+            'privacy'      => array( 'type' => array( 'string', 'boolean' ) ), // Consent box ("on"), checked in the handler.
             'website'      => array( 'type' => 'string' ), // Honeypot.
         ),
     ) );
@@ -71,6 +76,9 @@ function nsw_theme_handle_contact( WP_REST_Request $request ) {
             return new WP_Error( 'nsw_theme_missing', __( 'Missing required fields.', 'nsw-theme' ), array( 'status' => 400 ) );
         }
     }
+    if ( ! nsw_theme_contact_has_consent( $params['privacy'] ?? null ) ) {
+        return new WP_Error( 'nsw_theme_no_consent', __( 'You must accept the privacy policy', 'nsw-theme' ), array( 'status' => 400 ) );
+    }
     if ( ! is_email( $data['email'] ) ) {
         return new WP_Error( 'nsw_theme_bad_email', __( 'Please enter a valid email.', 'nsw-theme' ), array( 'status' => 422 ) );
     }
@@ -81,23 +89,151 @@ function nsw_theme_handle_contact( WP_REST_Request $request ) {
         return new WP_Error( 'nsw_theme_short_message', __( 'Message is too short.', 'nsw-theme' ), array( 'status' => 400 ) );
     }
 
+    $attachment = nsw_theme_contact_get_attachment( $request );
+    if ( is_wp_error( $attachment ) ) { return $attachment; }
+
     if ( nsw_theme_contact_mantis_configured() ) {
-        $issue = nsw_theme_contact_create_mantis_issue( $data );
+        $files = $attachment ? array( array( 'name' => $attachment['name'], 'content' => $attachment['content'] ) ) : array();
+        $issue = nsw_theme_contact_create_mantis_issue( $data, $files );
         if ( is_wp_error( $issue ) ) { return $issue; }
         $ref = $issue['id'] ? 'NSWAL-' . $issue['id'] : '';
 
         if ( $ref ) {
-            try { nsw_theme_contact_send_confirmation_email( $data, $ref ); }
-            catch ( \Throwable $e ) { error_log( 'NSW Theme contact: confirmation email failed (non-fatal): ' . $e->getMessage() ); }
+            try {
+                if ( ! nsw_theme_contact_send_confirmation_email( $data, $ref ) ) {
+                    error_log( 'NSW Theme contact: confirmation email failed (non-fatal): the mail server did not accept the email for ' . $ref . '.' );
+                }
+            } catch ( \Throwable $e ) {
+                error_log( 'NSW Theme contact: confirmation email failed (non-fatal): ' . $e->getMessage() );
+            }
         }
         return new WP_REST_Response( array( 'success' => true, 'ticket' => $ref, 'message' => __( 'Message sent.', 'nsw-theme' ) ), 200 );
     }
 
     // Fallback: email the admin when Mantis isn't configured (demo/staging).
-    if ( ! nsw_theme_contact_send_admin_notification( $data ) ) {
+    $attachments = $attachment ? array( $attachment['name'] => $attachment['path'] ) : array();
+    if ( ! nsw_theme_contact_send_admin_notification( $data, $attachments ) ) {
+        error_log( 'NSW Theme contact: email to the administrator failed (Help Desk not configured): the mail server did not accept it.' );
         return new WP_Error( 'nsw_theme_mail_failed', __( 'Could not send the message. Please try again later.', 'nsw-theme' ), array( 'status' => 500 ) );
     }
     return new WP_REST_Response( array( 'success' => true, 'message' => __( 'Message sent.', 'nsw-theme' ) ), 200 );
+}
+
+/* ---- Privacy consent ----------------------------------------------------- */
+
+/** True when the privacy consent box was ticked (a checkbox sends "on"). */
+function nsw_theme_contact_has_consent( $value ): bool {
+    return is_scalar( $value ) && filter_var( $value, FILTER_VALIDATE_BOOLEAN );
+}
+
+/* ---- Attachment ---------------------------------------------------------- */
+
+/** Largest attachment accepted, in bytes (10 MB). */
+const NSW_THEME_CONTACT_ATTACHMENT_MAX = 10 * 1024 * 1024;
+
+/**
+ * Allowed attachment extensions => the bytes such a file starts with. The content
+ * must match the extension; the MIME type the browser sends is never used.
+ */
+function nsw_theme_contact_attachment_signatures(): array {
+    return array(
+        'pdf'  => '%PDF-',
+        'doc'  => "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1", // OLE2 compound file (Word 97-2003).
+        'docx' => "PK\x03\x04",                       // ZIP container (Office Open XML).
+        'jpg'  => "\xFF\xD8\xFF",
+        'jpeg' => "\xFF\xD8\xFF",
+        'png'  => "\x89PNG\r\n\x1A\n",
+    );
+}
+
+/**
+ * Container formats => the part names a Word document of that format always holds.
+ * Any ZIP archive starts like a docx, and any OLE2 file (a spreadsheet, an installer)
+ * starts like a doc, so the start alone does not tell the type. Part names are stored
+ * uncompressed in both formats.
+ */
+function nsw_theme_contact_attachment_parts(): array {
+    return array(
+        'doc'  => array( "W\0o\0r\0d\0D\0o\0c\0u\0m\0e\0n\0t\0" ), // The WordDocument stream (UTF-16LE).
+        'docx' => array( '[Content_Types].xml', 'word/' ),       // The package content types and the Word part folder.
+    );
+}
+
+/** True when the content is of the type its extension names. */
+function nsw_theme_contact_attachment_content_matches( string $ext, string $content ): bool {
+    $signatures = nsw_theme_contact_attachment_signatures();
+    if ( ! isset( $signatures[ $ext ] ) || 0 !== strncmp( $content, $signatures[ $ext ], strlen( $signatures[ $ext ] ) ) ) {
+        return false;
+    }
+    foreach ( nsw_theme_contact_attachment_parts()[ $ext ] ?? array() as $part ) {
+        if ( false === strpos( $content, $part ) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/** The refusal for an attachment problem: 'type', 'size' or 'failed' (status 400). */
+function nsw_theme_contact_attachment_error( string $problem ): WP_Error {
+    if ( 'type' === $problem ) {
+        return new WP_Error( 'nsw_theme_attachment_type', __( 'The attachment must be a PDF, DOC, DOCX, JPG, JPEG or PNG file.', 'nsw-theme' ), array( 'status' => 400 ) );
+    }
+    if ( 'size' === $problem ) {
+        return new WP_Error( 'nsw_theme_attachment_size', __( 'The attachment must not be larger than 10 MB.', 'nsw-theme' ), array( 'status' => 400 ) );
+    }
+    return new WP_Error( 'nsw_theme_attachment_failed', __( 'The attachment could not be uploaded. Please try again.', 'nsw-theme' ), array( 'status' => 400 ) );
+}
+
+/**
+ * The optional attachment (form field `attachment`), checked on the server: one
+ * file that PHP received with this request, named pdf, doc, docx, jpg, jpeg or png,
+ * whose content is of that type, up to 10 MB. The file is read from PHP's
+ * temporary upload folder (PHP deletes it when the request ends) and is never
+ * moved into the uploads folder.
+ *
+ * @return array{name: string, path: string, content: string}|null|WP_Error Null when no file was sent.
+ */
+function nsw_theme_contact_get_attachment( WP_REST_Request $request ) {
+    $files = $request->get_file_params();
+    if ( empty( $files['attachment'] ) || ! is_array( $files['attachment'] ) ) { return null; }
+    $file = $files['attachment'];
+
+    if ( ! isset( $file['error'], $file['name'], $file['tmp_name'] ) || is_array( $file['error'] ) ) {
+        return nsw_theme_contact_attachment_error( 'failed' ); // Missing parts, or more than one file.
+    }
+    $error = (int) $file['error'];
+    if ( UPLOAD_ERR_NO_FILE === $error ) { return null; }
+    if ( UPLOAD_ERR_INI_SIZE === $error || UPLOAD_ERR_FORM_SIZE === $error ) {
+        return nsw_theme_contact_attachment_error( 'size' );
+    }
+    if ( UPLOAD_ERR_OK !== $error ) {
+        if ( UPLOAD_ERR_PARTIAL !== $error ) { // The others are server problems (temporary folder, disk, extension).
+            error_log( 'NSW Theme contact: attachment upload failed on the server, PHP upload error ' . $error . '.' );
+        }
+        return nsw_theme_contact_attachment_error( 'failed' );
+    }
+
+    $path = (string) $file['tmp_name'];
+    if ( '' === $path || ! is_uploaded_file( $path ) ) { return nsw_theme_contact_attachment_error( 'failed' ); }
+
+    $name       = sanitize_file_name( (string) $file['name'] );
+    $ext        = strtolower( (string) pathinfo( $name, PATHINFO_EXTENSION ) );
+    $signatures = nsw_theme_contact_attachment_signatures();
+    if ( ! isset( $signatures[ $ext ] ) ) { return nsw_theme_contact_attachment_error( 'type' ); }
+
+    $size = filesize( $path );
+    if ( false === $size ) { return nsw_theme_contact_attachment_error( 'failed' ); }
+    if ( $size > NSW_THEME_CONTACT_ATTACHMENT_MAX ) { return nsw_theme_contact_attachment_error( 'size' ); }
+
+    $content = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local temporary upload.
+    if ( false === $content || strlen( $content ) > NSW_THEME_CONTACT_ATTACHMENT_MAX ) {
+        return nsw_theme_contact_attachment_error( 'failed' );
+    }
+    if ( ! nsw_theme_contact_attachment_content_matches( $ext, $content ) ) {
+        return nsw_theme_contact_attachment_error( 'type' );
+    }
+
+    return array( 'name' => $name, 'path' => $path, 'content' => $content );
 }
 
 /* ---- Customer confirmation email ---------------------------------------- */
@@ -124,7 +260,6 @@ function nsw_theme_contact_send_confirmation_email( array $data, string $ref ): 
     $body  = '<div style="font-family:system-ui,-apple-system,sans-serif;color:#222;line-height:1.5;max-width:600px">';
     $body .= '<p>' . $greeting . '</p>';
     $body .= '<p>' . $thanks . '</p>';
-    $body .= '<p>' . esc_html__( 'We aim to respond within 36 hours.', 'nsw-theme' ) . '</p>';
     $body .= '<hr style="border:0;border-top:1px solid #ddd;margin:24px 0">';
     $body .= '<p style="color:#666;font-size:13px;margin:0 0 8px"><strong>' . esc_html__( 'Your message:', 'nsw-theme' ) . '</strong></p>';
     $body .= '<p style="color:#666;font-size:13px;margin:0 0 4px"><em>' . $msg_sub . '</em></p>';
@@ -139,7 +274,11 @@ function nsw_theme_contact_send_confirmation_email( array $data, string $ref ): 
 }
 
 /* ---- Admin fallback notification (Mantis not configured) ----------------- */
-function nsw_theme_contact_send_admin_notification( array $data ): bool {
+/**
+ * @param array                 $data        Validated form data.
+ * @param array<string, string> $attachments Optional attachment: file name => temporary upload path.
+ */
+function nsw_theme_contact_send_admin_notification( array $data, array $attachments = array() ): bool {
     $to = (string) get_option( 'nsw_theme_contact_email', get_option( 'admin_email' ) );
     if ( '' === $to ) { $to = (string) get_option( 'admin_email' ); }
     $site    = (string) get_bloginfo( 'name' );
@@ -165,7 +304,7 @@ function nsw_theme_contact_send_admin_notification( array $data ): bool {
     }
     $body .= sprintf( '<tr><td style="padding:8px 12px;font-weight:bold;vertical-align:top">%s</td><td style="padding:8px 12px;white-space:pre-wrap">%s</td></tr>', esc_html__( 'Message', 'nsw-theme' ), nl2br( esc_html( $data['message'] ) ) );
     $body .= '</table>';
-    return (bool) wp_mail( $to, $subject, $body, $headers );
+    return (bool) wp_mail( $to, $subject, $body, $headers, $attachments );
 }
 
 /* ---- SMTP via PHPMailer (when NSW_THEME_SMTP_* are defined) --------------- */

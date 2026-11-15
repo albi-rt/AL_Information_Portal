@@ -85,7 +85,7 @@ foreach ( ( $issue['custom_fields'] ?? array() ) as $row ) { $cf[ $row['field'][
 check( 'cf Customer Name',   ( $cf['Customer Name']   ?? '' ) === 'Arben Krasniqi' );
 check( 'cf Organization',    ( $cf['Organization']    ?? '' ) === 'Doganat Shqiptare' );
 check( 'cf Relevant Agency mapped to "Customs"', ( $cf['Relevant Agency'] ?? '' ) === 'Customs' );
-check( 'cf Source Channel = Portal', ( $cf['Source Channel'] ?? '' ) === 'Portal' );
+check( 'cf Source Channel = Information Portal', ( $cf['Source Channel'] ?? '' ) === 'Information Portal' );
 check( 'description starts with From: line', strpos( (string) ( $issue['description'] ?? '' ), 'From: Arben Krasniqi <arben@example.al>' ) === 0 );
 
 echo $fails === 0 ? "\nINTEGRATION PASS (ticket #$id)\n" : "\n$fails FAILED\n";

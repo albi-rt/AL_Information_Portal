@@ -166,7 +166,60 @@ final class ContactMantisTest extends TestCase {
 		$this->assertSame( $subject, $payload['summary'] );
 	}
 
+	/** Source: TSD 2.4, Help Desk interface (subject cut to 128 characters). */
+	#[TestDox('The summary cut counts letters, not bytes, so Albanian letters such as ë are not cut early')]
+	public function test_summary_cut_counts_characters(): void {
+		Functions\when( 'get_option' )->returnArg( 2 );
+		$payload = nsw_theme_contact_build_issue_payload( $this->request( array( 'subject' => str_repeat( 'ë', 200 ) ) ) );
+		$this->assertSame( str_repeat( 'ë', 128 ), $payload['summary'] );
+	}
+
+	/** Source: TSD 2.4, Help Desk interface (description: ... full subject if cut ...). */
+	#[TestDox('The description repeats the full subject, after the agency and before the message, only when the summary had to cut it')]
+	public function test_description_full_subject_only_when_cut(): void {
+		$long = str_repeat( 'z', 129 );
+		$this->assertSame(
+			"From: Jane Doe <jane@example.com>\nOrganization: ACME sh.p.k.\nCategory: Technical issue\nAgency: Customs\nSubject: $long\n\nLine one.\nLine two.",
+			nsw_theme_contact_build_description( $this->request( array( 'subject' => $long ) ) )
+		);
+		$this->assertStringNotContainsString(
+			'Subject:',
+			nsw_theme_contact_build_description( $this->request( array( 'subject' => str_repeat( 'z', 128 ) ) ) )
+		);
+	}
+
+	/** Source: TSD 2.4, Help Desk interface (optional attachment, base64 in the files element). */
+	#[TestDox('An attachment goes in the files element with its name and its content in base64; without one there is no files element')]
+	public function test_payload_files_element(): void {
+		Functions\when( 'get_option' )->returnArg( 2 );
+		$content = "%PDF-1.4\nInvented test file content.";
+
+		$with    = nsw_theme_contact_build_issue_payload( $this->request(), array( array( 'name' => 'evidence.pdf', 'content' => $content ) ) );
+		$without = nsw_theme_contact_build_issue_payload( $this->request() );
+
+		$this->assertSame( array( array( 'name' => 'evidence.pdf', 'content' => base64_encode( $content ) ) ), $with['files'] );
+		$this->assertArrayNotHasKey( 'files', $without );
+	}
+
 	/* ------------------------------------------------------------- configuration */
+
+	/** Source: TSD 2.5.3, secrets (... SMTP credentials) only in wp-config.php, not in the database. */
+	#[TestDox('The mail server password is never read from the database by the settings reader')]
+	public function test_smtp_password_setting_not_read_from_database(): void {
+		Functions\when( 'get_option' )->alias(
+			static fn( $name, $default = false ) => 'nsw_theme_smtp_pass' === $name ? 'password-in-the-database' : $default
+		);
+		$this->assertSame( '', nsw_theme_contact_config( 'smtp_pass' ) );
+	}
+
+	/** Source: TSD 2.3.3, nsw_theme_contact_from and nsw_theme_contact_reply_to are wp_options rows. */
+	#[TestDox('Settings that are not secrets, such as the confirmation From address, are still read from the database')]
+	public function test_non_secret_settings_read_from_database(): void {
+		Functions\when( 'get_option' )->alias(
+			static fn( $name, $default = false ) => 'nsw_theme_contact_from' === $name ? 'noreply@example.com' : $default
+		);
+		$this->assertSame( 'noreply@example.com', nsw_theme_contact_config( 'contact_from' ) );
+	}
 
 	#[TestDox('The Help Desk counts as not configured when no settings are present')]
 	public function test_not_configured_without_settings(): void {

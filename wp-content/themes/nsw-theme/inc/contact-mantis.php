@@ -4,19 +4,32 @@
  * and the REST transport. No hooks registered at load, so this file is
  * unit-testable under plain PHP (see tests/contact-mantis-test.php).
  *
- * Secrets (wp-config.php constants):
+ * Settings (wp-config.php constants):
  *   NSW_THEME_MANTIS_URL         base URL, trailing slash (REST at {URL}api/rest/)
- *   NSW_THEME_MANTIS_TOKEN       API token for the nswal_web service account
+ *   NSW_THEME_MANTIS_TOKEN       API token for the nswal_web service account (secret)
  *   NSW_THEME_MANTIS_PROJECT_ID  Mantis project id (default "1")
  *
  * @package NSW_Theme
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-/** Constants (wp-config.php) win over wp_options so secrets never land in the DB. */
+/** The Help Desk title (MantisBT summary) holds 128 characters; a longer subject is cut. */
+const NSW_THEME_CONTACT_SUMMARY_MAX = 128;
+
+/** Settings that are secrets: read only from wp-config.php, never from the database (TSD 2.5.3). */
+function nsw_theme_contact_secret_keys(): array {
+    return array( 'mantis_token', 'smtp_pass' );
+}
+
+/**
+ * A contact setting. The wp-config.php constant NSW_THEME_<KEY> wins over the
+ * matching wp_options row; secrets (see nsw_theme_contact_secret_keys()) come
+ * only from the constant.
+ */
 function nsw_theme_contact_config( string $key, string $default = '' ): string {
     $const = 'NSW_THEME_' . strtoupper( $key );
     if ( defined( $const ) ) { return (string) constant( $const ); }
+    if ( in_array( strtolower( $key ), nsw_theme_contact_secret_keys(), true ) ) { return $default; }
     return (string) get_option( 'nsw_theme_' . strtolower( $key ), $default );
 }
 
@@ -55,7 +68,15 @@ function nsw_theme_contact_map_category( string $key ): string {
     return $labels[ $key ] ?? 'General inquiry';
 }
 
-/** Plain-text description: `From:` first line (agent-facing), meta lines, then the message. */
+/** The ticket summary: the subject, cut to NSW_THEME_CONTACT_SUMMARY_MAX characters. */
+function nsw_theme_contact_build_summary( string $subject ): string {
+    return mb_substr( $subject, 0, NSW_THEME_CONTACT_SUMMARY_MAX );
+}
+
+/**
+ * Plain-text description: `From:` first line (agent-facing), meta lines, the full
+ * subject when the summary had to cut it, then the message.
+ */
 function nsw_theme_contact_build_description( array $data ): string {
     $lines   = array();
     $lines[] = 'From: ' . $data['fullName'] . ' <' . $data['email'] . '>';
@@ -66,6 +87,10 @@ function nsw_theme_contact_build_description( array $data ): string {
     if ( '' !== ( $data['agency'] ?? '' ) ) {
         $agencies = nsw_theme_contact_agency_labels();
         $lines[]  = 'Agency: ' . ( $agencies[ $data['agency'] ] ?? $data['agency'] );
+    }
+    $subject = (string) ( $data['subject'] ?? '' );
+    if ( mb_strlen( $subject ) > NSW_THEME_CONTACT_SUMMARY_MAX ) {
+        $lines[] = 'Subject: ' . $subject;
     }
     $lines[] = '';
     $lines[] = (string) ( $data['message'] ?? '' );
@@ -87,28 +112,54 @@ function nsw_theme_contact_build_custom_fields( array $data ): array {
     if ( '' !== ( $data['agency'] ?? '' ) ) {
         $add( 'Relevant Agency', $agencies[ $data['agency'] ] ?? $data['agency'] );
     }
-    $add( 'Source Channel', 'Portal' );
+    $add( 'Source Channel', 'Information Portal' );
     return $fields;
 }
 
-/** Assemble the full MantisBT issue payload. */
-function nsw_theme_contact_build_issue_payload( array $data ): array {
-    return array(
-        'summary'       => (string) ( $data['subject'] ?? '' ),
+/**
+ * The REST files element: each attachment as its name and its content in base64.
+ *
+ * @param array<int, array{name: string, content: string}> $files Raw file contents.
+ */
+function nsw_theme_contact_build_files( array $files ): array {
+    $out = array();
+    foreach ( $files as $file ) {
+        $out[] = array(
+            'name'    => (string) $file['name'],
+            'content' => base64_encode( (string) $file['content'] ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- MantisBT REST expects base64 file content.
+        );
+    }
+    return $out;
+}
+
+/**
+ * Assemble the full MantisBT issue payload.
+ *
+ * @param array $data  Validated form data.
+ * @param array $files Optional attachments, array{name, content} with the raw content.
+ */
+function nsw_theme_contact_build_issue_payload( array $data, array $files = array() ): array {
+    $payload = array(
+        'summary'       => nsw_theme_contact_build_summary( (string) ( $data['subject'] ?? '' ) ),
         'description'   => nsw_theme_contact_build_description( $data ),
         'project'       => array( 'id' => (int) nsw_theme_contact_config( 'mantis_project_id', '1' ) ),
         'category'      => array( 'name' => nsw_theme_contact_map_category( (string) ( $data['category'] ?? '' ) ) ),
         'custom_fields' => nsw_theme_contact_build_custom_fields( $data ),
     );
+    if ( $files ) {
+        $payload['files'] = nsw_theme_contact_build_files( $files );
+    }
+    return $payload;
 }
 
 /**
  * Create a MantisBT issue via REST. Returns array{id:int} or WP_Error.
  *
- * @param array $data Validated form data.
+ * @param array $data  Validated form data.
+ * @param array $files Optional attachments, array{name, content} with the raw content.
  * @return array{id:int}|WP_Error
  */
-function nsw_theme_contact_create_mantis_issue( array $data ) {
+function nsw_theme_contact_create_mantis_issue( array $data, array $files = array() ) {
     $base  = rtrim( nsw_theme_contact_config( 'mantis_url' ), '/' );
     $token = nsw_theme_contact_config( 'mantis_token' );
 
@@ -121,7 +172,7 @@ function nsw_theme_contact_create_mantis_issue( array $data ) {
                 'Accept'        => 'application/json',
                 'Content-Type'  => 'application/json',
             ),
-            'body'    => wp_json_encode( nsw_theme_contact_build_issue_payload( $data ) ),
+            'body'    => wp_json_encode( nsw_theme_contact_build_issue_payload( $data, $files ) ),
         )
     );
 

@@ -135,7 +135,18 @@ final class ContactFormTest extends TestCase {
 	 */
 	private function request_with_attachment( array $files ): \WP_REST_Request {
 		$_FILES = $files;
+		$this->php_received( $files );
 		return $this->request( $this->fields(), 'valid-nonce', true, $files );
+	}
+
+	/**
+	 * PHP's own check that a file arrived with the request (is_uploaded_file) only knows
+	 * files PHP received over HTTP. The test files are made with tempnam, so this tells the
+	 * check which of them count as uploaded: exactly the ones in $files.
+	 */
+	private function php_received( array $files ): void {
+		$uploaded = array_column( $files, 'tmp_name' );
+		Functions\when( 'is_uploaded_file' )->alias( static fn( $path ) => in_array( $path, $uploaded, true ) );
 	}
 
 	/** Replaces the WordPress functions the form uses with simple stand-ins. */
@@ -158,6 +169,9 @@ final class ContactFormTest extends TestCase {
 		);
 		Functions\when( 'sanitize_textarea_field' )->alias( static fn( $text ) => trim( strip_tags( (string) $text ) ) );
 		Functions\when( 'sanitize_email' )->alias( static fn( $email ) => trim( (string) $email ) );
+		Functions\when( 'sanitize_file_name' )->alias(
+			static fn( $name ) => (string) preg_replace( '/[^A-Za-z0-9._-]+/', '', str_replace( ' ', '-', (string) $name ) )
+		);
 		Functions\when( 'is_email' )->alias(
 			static fn( $email ) => false !== filter_var( $email, FILTER_VALIDATE_EMAIL ) ? $email : false
 		);
@@ -246,11 +260,18 @@ final class ContactFormTest extends TestCase {
 		return str_repeat( 'x', $extra ) . 'jane@' . str_repeat( 'a', 61 ) . '.' . str_repeat( 'b', 60 ) . '.' . str_repeat( 'c', 60 ) . '.example.com';
 	}
 
-	/** First bytes of each file type, so a content check sees the right type. */
+	/**
+	 * First bytes of each file type, so a content check sees the right type. The two Word
+	 * formats are containers, so they also hold the part names every Word document has: a
+	 * doc the WordDocument stream (OLE2 directory, UTF-16LE), a docx the [Content_Types].xml
+	 * and word/document.xml entries (ZIP local file headers).
+	 */
 	private const MAGIC = array(
 		'pdf'  => "%PDF-1.4\n",
-		'doc'  => "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1",
-		'docx' => "PK\x03\x04",
+		'doc'  => "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x3E\0\x03\0\xFE\xFF\x09\0"
+			. "R\0o\0o\0t\0 \0E\0n\0t\0r\0y\0\0\0W\0o\0r\0d\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0",
+		'docx' => "PK\x03\x04\x14\0\x06\0\x08\0\0\0\x21\0\0\0\0\0\0\0\0\0\0\0\0\0\x13\0\0\0[Content_Types].xml"
+			. "PK\x03\x04\x14\0\x06\0\x08\0\0\0\x21\0\0\0\0\0\0\0\0\0\0\0\0\0\x11\0\0\0word/document.xml",
 		'jpg'  => "\xFF\xD8\xFF\xE0",
 		'jpeg' => "\xFF\xD8\xFF\xE0",
 		'png'  => "\x89PNG\r\n\x1a\n",
@@ -1041,6 +1062,210 @@ final class ContactFormTest extends TestCase {
 			sha1_file( $files['attachment']['tmp_name'] ),
 			sha1( (string) base64_decode( (string) ( $body['files'][0]['content'] ?? '' ), true ) )
 		);
+	}
+
+	public static function content_not_matching_name(): array {
+		return array(
+			'web page named .pdf'     => array( 'scan.pdf', "<!doctype html><script>alert(1)</script>" ),
+			'program named .docx'     => array( 'letter.docx', "MZ\x90\x00Invented test program." ),
+			'PNG image named .jpg'    => array( 'photo.jpg', "\x89PNG\r\n\x1a\nInvented test image." ),
+			'ZIP archive named .docx' => array( 'documents.docx', "PK\x03\x04\x14\0\0\0\x08\0\0\0\x21\0\0\0\0\0\0\0\0\0\0\0\0\0\x09\0\0\0setup.exeInvented test archive." ),
+			'spreadsheet named .doc'  => array( 'table.doc', "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1R\0o\0o\0t\0 \0E\0n\0t\0r\0y\0\0\0W\0o\0r\0k\0b\0o\0o\0k\0\0\0Invented test spreadsheet." ),
+		);
+	}
+
+	/** Source: TSD 2.2.3, attachment type ... checked on the server; TSD 2.5.2, the theme sanitises input. */
+	#[DataProvider('content_not_matching_name')]
+	#[TestDox('An attachment whose content is not what its name says ($name) is refused (status 400), whatever type the browser reports')]
+	public function test_attachment_content_must_match_name( string $name, string $content ): void {
+		$this->stub_wordpress();
+		$this->help_desk_configured();
+		$files = array( 'attachment' => $this->upload( $name, strlen( $content ), $content ) );
+
+		$result = nsw_theme_handle_contact( $this->request_with_attachment( $files ) );
+
+		$this->assertRefused( $result, 'nsw_theme_attachment_type', 400 );
+		$this->assertSame( 'The attachment must be a PDF, DOC, DOCX, JPG, JPEG or PNG file.', $result->get_error_message() );
+		$this->assertSame( array(), $this->tickets );
+	}
+
+	/** Source: TSD 2.5.2, the theme sanitises input; the file must be one PHP received with this request. */
+	#[TestDox('A file that did not arrive with the request is refused (status 400) and its content is not sent')]
+	public function test_file_not_uploaded_with_request_refused(): void {
+		$this->stub_wordpress();
+		$this->help_desk_over_the_network();
+		$files = array( 'attachment' => $this->upload( 'evidence.pdf', 64, "%PDF-1.4\nInvented test file content." ) );
+		$this->php_received( array() );
+
+		$result = nsw_theme_handle_contact( $this->request( $this->fields(), 'valid-nonce', true, $files ) );
+
+		$this->assertRefused( $result, 'nsw_theme_attachment_failed', 400 );
+		$this->assertSame( array(), $this->help_desk_calls );
+	}
+
+	/** Source: TSD 2.2.3, Optional attachment. */
+	#[TestDox('A form sent with the file field left empty is accepted and the ticket carries no file')]
+	public function test_empty_file_field_means_no_attachment(): void {
+		$this->stub_wordpress();
+		$this->help_desk_over_the_network();
+		$files = array(
+			'attachment' => array( 'name' => '', 'type' => '', 'tmp_name' => '', 'error' => UPLOAD_ERR_NO_FILE, 'size' => 0 ),
+		);
+
+		$result = nsw_theme_handle_contact( $this->request_with_attachment( $files ) );
+
+		$this->assertAccepted( $result );
+		$this->assertCount( 1, $this->help_desk_calls );
+		$this->assertArrayNotHasKey( 'files', $this->help_desk_calls[0]['body'] );
+	}
+
+	/** Source: TSD 2.2.3, up to 10 MB ... size checked on the server; TSD 2.4.3, upload_max_filesize 10M. */
+	#[TestDox('A file that PHP refused as larger than its upload limit is refused as too large (status 400)')]
+	public function test_file_over_php_upload_limit_refused(): void {
+		$this->stub_wordpress();
+		$this->help_desk_configured();
+		$files = array(
+			'attachment' => array( 'name' => 'scan.pdf', 'type' => 'application/pdf', 'tmp_name' => '', 'error' => UPLOAD_ERR_INI_SIZE, 'size' => 0 ),
+		);
+
+		$result = nsw_theme_handle_contact( $this->request_with_attachment( $files ) );
+
+		$this->assertRefused( $result, 'nsw_theme_attachment_size', 400 );
+		$this->assertSame( 'The attachment must not be larger than 10 MB.', $result->get_error_message() );
+		$this->assertSame( array(), $this->tickets );
+	}
+
+	/** Source: TSD 2.2.3, forwarded, not stored; TSD 2.3, contact form submissions are not stored. */
+	#[TestDox('An accepted attachment is not stored on the website: it stays in the temporary upload folder and is not added to the media library')]
+	public function test_attachment_not_stored(): void {
+		$this->stub_wordpress();
+		$this->help_desk_over_the_network();
+		Functions\expect( 'wp_handle_upload' )->never();
+		Functions\expect( 'media_handle_upload' )->never();
+		Functions\expect( 'wp_upload_bits' )->never();
+		Functions\expect( 'wp_insert_attachment' )->never();
+		$content = "%PDF-1.4\nInvented test file content.";
+		$files   = array( 'attachment' => $this->upload( 'evidence.pdf', strlen( $content ), $content ) );
+
+		$this->assertAccepted( nsw_theme_handle_contact( $this->request_with_attachment( $files ) ) );
+
+		$this->assertFileExists( $files['attachment']['tmp_name'] );
+		$this->assertSame( $content, file_get_contents( $files['attachment']['tmp_name'] ) );
+	}
+
+	/** Source: TSD 2.5.2, the theme sanitises input. */
+	#[TestDox('The file name the browser sends is cleaned before it is passed on')]
+	public function test_attachment_name_cleaned(): void {
+		$this->stub_wordpress();
+		$this->help_desk_over_the_network();
+		$content = "%PDF-1.4\nInvented test file content.";
+		$files   = array( 'attachment' => $this->upload( 'My scan <b>1</b>.pdf', strlen( $content ), $content ) );
+
+		$this->assertAccepted( nsw_theme_handle_contact( $this->request_with_attachment( $files ) ) );
+
+		$this->assertSame( 'My-scan-b1b.pdf', $this->help_desk_calls[0]['body']['files'][0]['name'] );
+	}
+
+	/** Source: TSD 2.4.2, Help Desk not configured: submission to the fallback recipient; TSD 2.2.3, attachment forwarded, not stored. */
+	#[TestDox('Without Help Desk settings the attachment goes with the email to the administrator, under its own name')]
+	public function test_fallback_email_carries_attachment(): void {
+		$this->stub_wordpress();
+		$this->help_desk_not_configured();
+		$attached = null;
+		Functions\when( 'wp_mail' )->alias(
+			function ( $to, $subject, $message, $headers = '', $attachments = array() ) use ( &$attached ) {
+				$attached = $attachments;
+				return true;
+			}
+		);
+		$content = "\x89PNG\r\n\x1a\nInvented test image.";
+		$files   = array( 'attachment' => $this->upload( 'screen.png', strlen( $content ), $content ) );
+
+		$this->assertAccepted( nsw_theme_handle_contact( $this->request_with_attachment( $files ) ) );
+
+		$this->assertSame( array( 'screen.png' => $files['attachment']['tmp_name'] ), $attached );
+	}
+
+	/* ---------------------------------------------------------- consent values */
+
+	public static function consent_not_given(): array {
+		return array(
+			'off'   => array( 'off' ),
+			'0'     => array( '0' ),
+			'false' => array( 'false' ),
+			'no'    => array( 'no' ),
+		);
+	}
+
+	/** Source: TSD 2.2.3, privacy consent required ... checked on the server. */
+	#[DataProvider('consent_not_given')]
+	#[TestDox('A message whose consent field says "$value" is refused (status 400) with the consent message')]
+	public function test_consent_not_given_refused( string $value ): void {
+		$this->stub_wordpress();
+		$this->help_desk_configured();
+
+		$result = nsw_theme_handle_contact( $this->request( $this->fields( array( 'privacy' => $value ) ) ) );
+
+		$this->assertRefused( $result, 'nsw_theme_no_consent', 400 );
+		$this->assertSame( 'You must accept the privacy policy', $result->get_error_message() );
+		$this->assertSame( array(), $this->tickets );
+	}
+
+	/** Source: TSD 2.4.2, multipart/form-data; a ticked checkbox sends "on". */
+	#[TestDox('A message posted as a web form with the consent box ticked is accepted')]
+	public function test_consent_from_web_form_accepted(): void {
+		$this->stub_wordpress();
+		$this->help_desk_configured();
+
+		$this->assertAccepted( nsw_theme_handle_contact( $this->request( $this->fields(), 'valid-nonce', true ) ) );
+	}
+
+	/** Source: TSD 2.2.3, privacy consent required ... checked on the server. */
+	#[TestDox('A JSON message whose consent field is true is accepted, and one whose consent field is false is refused (status 400)')]
+	public function test_consent_as_json_true_or_false(): void {
+		$this->stub_wordpress();
+		$this->help_desk_configured();
+
+		$this->assertAccepted( nsw_theme_handle_contact( $this->request( $this->fields( array( 'privacy' => true ) ) ) ) );
+		$this->transients = array();
+		$this->assertRefused( nsw_theme_handle_contact( $this->request( $this->fields( array( 'privacy' => false ) ) ) ), 'nsw_theme_no_consent', 400 );
+		$this->assertCount( 1, $this->tickets );
+	}
+
+	/** Source: TSD 2.2.3, privacy consent required ... checked on the server; TSD 2.4.2, multipart/form-data. */
+	#[TestDox('The web address lets the consent field through to the form check, as text from the web form or as true or false from a JSON client')]
+	public function test_route_lets_consent_through(): void {
+		$args = array();
+		Functions\when( 'register_rest_route' )->alias(
+			function ( $namespace, $route, $options ) use ( &$args ) {
+				$args = $options['args'];
+				return true;
+			}
+		);
+
+		( $this->hook( 'rest_api_init' ) )();
+
+		$this->assertFalse( $args['privacy']['required'] ?? false );
+		$this->assertContains( 'string', (array) $args['privacy']['type'] );
+		$this->assertContains( 'boolean', (array) $args['privacy']['type'] );
+	}
+
+	/* ------------------------------------------------------------ log privacy */
+
+	/** Source: TSD 2.6.2, failed emails are logged; TSD 2.5.3, contact submissions are not stored. */
+	#[TestDox('The log line for a failed email names the ticket but not the sender')]
+	public function test_failed_email_log_has_no_personal_data(): void {
+		$this->stub_wordpress();
+		$this->help_desk_configured();
+		$this->mail_result = false;
+
+		nsw_theme_handle_contact( $this->request( $this->fields() ) );
+
+		$this->assertCount( 1, $this->logs );
+		$this->assertStringContainsString( 'confirmation email failed', $this->logs[0] );
+		$this->assertStringContainsString( 'NSWAL-42', $this->logs[0] );
+		$this->assertStringNotContainsString( 'jane@example.com', $this->logs[0] );
+		$this->assertStringNotContainsString( 'Jane Doe', $this->logs[0] );
 	}
 
 	/* ------------------------------------------------------ confirmation email */

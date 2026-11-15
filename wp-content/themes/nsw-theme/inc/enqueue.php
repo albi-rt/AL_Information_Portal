@@ -36,7 +36,7 @@ add_action(
 				'locale'  => nsw_theme_current_locale(),
 				'i18n'    => array(
 					'submitting' => __( 'Submitting…', 'nsw-theme' ),
-					'sent'       => __( 'Message sent. We will get back to you shortly.', 'nsw-theme' ),
+					'sent'       => __( 'Message sent.', 'nsw-theme' ),
 					'error'      => __( 'Something went wrong. Please try again.', 'nsw-theme' ),
 					'required'   => __( 'Please fill out all required fields.', 'nsw-theme' ),
 				),

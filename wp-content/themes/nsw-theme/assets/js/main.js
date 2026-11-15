@@ -483,11 +483,22 @@
 				}
 			}
 
-			var payload = {};
-			new FormData(form).forEach(function (value, key) {
-				if (typeof File !== "undefined" && value instanceof File) return;
-				payload[key] = value;
-			});
+			// Sent as multipart/form-data: every field, the consent box (only when
+			// ticked) and the attachment. The browser sets the Content-Type.
+			var body = new FormData(form);
+			var fileInput = form.querySelector("input[type=file][name]");
+			if (fileInput) {
+				var file = fileInput.files && fileInput.files[0];
+				var maxBytes = Number(fileInput.getAttribute("data-max-bytes")) || 0;
+				if (!file) {
+					body.delete(fileInput.name);
+				} else if (maxBytes && file.size > maxBytes) {
+					feedback.textContent = fileInput.getAttribute("data-too-large") || I18N.error || "Error";
+					feedback.classList.add("form__feedback--err");
+					fileInput.focus();
+					return;
+				}
+			}
 
 			submit.disabled = true;
 			submit.setAttribute("aria-busy", "true");
@@ -496,10 +507,9 @@
 			fetch(REST_URL + "contact", {
 				method: "POST",
 				headers: {
-					"Content-Type": "application/json",
 					"X-WP-Nonce": REST_NONCE
 				},
-				body: JSON.stringify(payload)
+				body: body
 			}).then(function (res) {
 				return res.json().then(function (data) { return { ok: res.ok, data: data }; });
 			}).then(function (result) {
