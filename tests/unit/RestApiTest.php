@@ -665,6 +665,21 @@ final class RestApiTest extends TestCase {
 		);
 	}
 
+	/** Source: TSD 2.4.2, "other keys, including agency keys, are rejected (HTTP 400)"; TSD 2.5.2, "no agency can be set or changed through the REST or content API". */
+	#[TestDox('The agency of a news item or service guide is never allowed as an extra field, even if it were shown in the REST API')]
+	public function test_meta_agency_never_allowed(): void {
+		$this->allow_meta( 'post', array( '_nsw_news_agency' ) );
+		$this->allow_meta( 'nsw_service', array( '_nsw_theme_service_type', '_nsw_service_agency' ) );
+
+		$this->assertSame( array(), nsw_rest_allowed_meta_keys( 'post' ) );
+		$this->assertSame( array( '_nsw_theme_service_type' ), nsw_rest_allowed_meta_keys( 'nsw_service' ) );
+		$this->assert_error(
+			nsw_rest_validate_meta( array( '_nsw_service_agency' => 'nfa' ), 'nsw_service' ),
+			'nsw_rest_unknown_meta',
+			400
+		);
+	}
+
 	/* ----------------------------------- extra fields of each type on the site */
 
 	/** Source: TSD 2.4.2, "meta accepts only the event ... keys of the type"; 2.3.3. */
@@ -1410,5 +1425,103 @@ final class RestApiTest extends TestCase {
 		);
 
 		$this->assertFalse( $this->apply_theme_filter( 'wp_is_application_passwords_available_for_user', true, $administrator ) );
+	}
+
+	/** An invented account holding the given rights, with the given role and assigned agency. */
+	private function account_with( array $rights, string $role = 'agency_officer', string $agency = 'example-agency' ): \WP_User {
+		Functions\when( 'user_can' )->alias( static fn( $user, $cap ) => $user instanceof \WP_User && $user->has_cap( $cap ) );
+		// The theme looks the role name up once per PHP process; fixed here so the
+		// result does not depend on the order the test files run in.
+		Functions\when( 'nsw_agency_officer_role' )->justReturn( 'agency_officer' );
+		Functions\when( 'get_user_meta' )->alias(
+			static fn( $user_id, $key = '', $single = false ) => ( 9 === (int) $user_id && '_nsw_agency' === $key ) ? $agency : ''
+		);
+		return new \WP_User(
+			array(
+				'ID'         => 9,
+				'user_login' => 'example-system',
+				'user_email' => 'example-system@example.com',
+				'roles'      => array( $role ),
+				'allcaps'    => array_fill_keys( $rights, true ),
+			)
+		);
+	}
+
+	/** Content types whose capability names include the "edit published" right, as WordPress sets them up. */
+	private function stub_types_with_edit_published_right(): void {
+		Functions\when( 'get_post_type_object' )->alias(
+			static function ( $type ) {
+				if ( ! isset( self::PLURALS[ $type ] ) ) {
+					return null;
+				}
+				$plural = self::PLURALS[ $type ];
+				return (object) array(
+					'name' => $type,
+					'cap'  => (object) array(
+						'edit_posts'           => 'edit_' . $plural,
+						'publish_posts'        => 'publish_' . $plural,
+						'edit_published_posts' => 'edit_published_' . $plural,
+					),
+				);
+			}
+		);
+	}
+
+	/** Source: TSD 2.5.2, Content API account "edit and submit revisions, no publish or edit-published right"; TSD 2.5.1. */
+	#[TestDox('A content API account, which may edit but neither publish nor edit published items, can have an Application Password')]
+	public function test_content_api_account_can_have_application_password(): void {
+		$this->stub_types_with_edit_published_right();
+		$account = $this->account_with( array( 'read', 'edit_posts', 'edit_nsw_services' ) );
+
+		$this->assertTrue( $this->apply_theme_filter( 'wp_is_application_passwords_available_for_user', true, $account ) );
+	}
+
+	/** Source: TSD 2.5.1, "only these accounts can have one"; TSD 2.5.2, Content API account "no publish or edit-published right". */
+	#[TestDox('An account that may publish, or edit published items, of any content API type cannot have an Application Password')]
+	public function test_publishing_account_cannot_have_application_password(): void {
+		$this->stub_types_with_edit_published_right();
+
+		foreach ( array( 'publish_posts', 'publish_nsw_document_posts', 'edit_published_pages', 'edit_published_nsw_services' ) as $right ) {
+			$account = $this->account_with( array( 'edit_posts', 'edit_pages', 'edit_nsw_document_posts', 'edit_nsw_services', $right ) );
+			$this->assertFalse( $this->apply_theme_filter( 'wp_is_application_passwords_available_for_user', true, $account ), $right );
+		}
+	}
+
+	/** Source: TSD 2.5.1, "only these accounts can have one"; TSD 2.5.2, Content API account "News items or service guides: Agency Officer role with one agency". */
+	#[TestDox('An account for news items or service guides can have an Application Password only with the Agency Officer role and an assigned agency')]
+	public function test_news_or_service_account_needs_agency_officer_with_agency(): void {
+		$this->stub_types_with_edit_published_right();
+		$cases = array(
+			'other role, news items'     => array( array( 'read', 'edit_posts' ), 'example_api_role', 'example-agency' ),
+			'other role, service guides' => array( array( 'read', 'edit_nsw_services' ), 'example_api_role', 'example-agency' ),
+			'no agency, news items'      => array( array( 'read', 'edit_posts' ), 'agency_officer', '' ),
+			'no agency, service guides'  => array( array( 'read', 'edit_nsw_services' ), 'agency_officer', '' ),
+		);
+		foreach ( $cases as $label => [ $rights, $role, $agency ] ) {
+			$account = $this->account_with( $rights, $role, $agency );
+			$this->assertFalse( $this->apply_theme_filter( 'wp_is_application_passwords_available_for_user', true, $account ), $label );
+		}
+
+		// Documents, events and pages need no Agency Officer role and no agency.
+		$account = $this->account_with( array( 'read', 'edit_nsw_document_posts', 'edit_nsw_event_posts' ), 'example_api_role', '' );
+		$this->assertTrue( $this->apply_theme_filter( 'wp_is_application_passwords_available_for_user', true, $account ), 'documents and events' );
+	}
+
+	/** Source: TSD 2.5.1, "only these accounts can have one"; TSD 2.5.2, Content API account "Role limited to its content types: edit and submit revisions". */
+	#[TestDox('An account that may not edit any content API type cannot have an Application Password')]
+	public function test_account_without_editing_rights_cannot_have_application_password(): void {
+		$this->stub_types_with_edit_published_right();
+		$account = $this->account_with( array( 'read', 'edit_nsw_agencies' ) );
+
+		$this->assertFalse( $this->apply_theme_filter( 'wp_is_application_passwords_available_for_user', true, $account ) );
+	}
+
+	/** Source: theme behaviour, not specified in the TSD. */
+	#[TestDox('The theme never turns Application Passwords on for an account when WordPress has them off')]
+	public function test_application_passwords_off_stay_off(): void {
+		$this->stub_types_with_edit_published_right();
+		$account = $this->account_with( array( 'read', 'edit_posts' ) );
+
+		$this->assertFalse( $this->apply_theme_filter( 'wp_is_application_passwords_available_for_user', false, $account ) );
 	}
 }

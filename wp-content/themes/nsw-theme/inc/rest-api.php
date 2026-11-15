@@ -12,8 +12,9 @@
  * SAME capabilities the wp-admin UI enforces — this route grants no new powers:
  *
  *   - CREATE: publishes if the user may `publish_posts`, else saves `pending`
- *     for admin review. For News this runs the theme's agency stamping
- *     (save_post_post in inc/agency-news.php).
+ *     for admin review. For News and Services this runs the theme's agency
+ *     stamping (save_post in inc/agency-news.php): items from an Agency Officer
+ *     account take the account's agency. The agency is never accepted as meta.
  *   - UPDATE of a draft/pending/future item: in place, if the user may edit it.
  *   - UPDATE of a PUBLISHED item: a full editor (`edit_post`) writes it live; a
  *     non-full editor who may `copy_post` (PublishPress Revisions' agency-scoped
@@ -227,13 +228,19 @@ function nsw_rest_find_post( string $type, string $external_id, string $lang ): 
 
 /**
  * Allowed passthrough meta keys for a type: registered for that subtype AND
- * exposed via show_in_rest, excluding our private identity key.
+ * exposed via show_in_rest, excluding our private identity key and the agency
+ * keys. The agency is never set through this endpoint: items from Agency
+ * Officer accounts take the account's agency on save (inc/agency-news.php).
  */
 function nsw_rest_allowed_meta_keys( string $type ): array {
+	$never = array( NSW_API_EXTERNAL_ID );
+	if ( function_exists( 'nsw_agency_scoped_types' ) ) {
+		$never = array_merge( $never, array_column( nsw_agency_scoped_types(), 'meta' ) );
+	}
 	$keys       = array();
 	$registered = get_registered_meta_keys( 'post', $type );
 	foreach ( $registered as $key => $meta_args ) {
-		if ( ! empty( $meta_args['show_in_rest'] ) && NSW_API_EXTERNAL_ID !== $key ) {
+		if ( ! empty( $meta_args['show_in_rest'] ) && ! in_array( $key, $never, true ) ) {
 			$keys[] = $key;
 		}
 	}
@@ -544,3 +551,60 @@ function nsw_rest_content_upsert( WP_REST_Request $request ) {
 	nsw_rest_apply_meta( (int) $revision_id, $meta );
 	return nsw_rest_response( 'revision_submitted', $existing, 'pending-revision', $lang, $external_id, (int) $revision_id );
 }
+
+/* --------------------------------------------------------------------------
+ * 7. Application Passwords: content API accounts only.
+ *
+ * The content API signs in with an Application Password, and only content API
+ * accounts may hold one. A content API account is not an administrator, may
+ * edit at least one of this endpoint's content types, and may neither publish
+ * nor edit published items of any of them, so everything it sends goes through
+ * approval. An account that may edit news items or service guides must also be
+ * an Agency Officer with an assigned agency, so its items take that agency.
+ * Every other account (administrators, any role that can publish, any other
+ * role that edits news items or service guides) cannot create an Application
+ * Password, and one it already has stops working: WordPress applies this
+ * filter both when a password is created and on every sign-in with one.
+ * -------------------------------------------------------------------------- */
+
+/** True if $user has the rights of a content API account (see above). */
+function nsw_rest_is_content_api_account( WP_User $user ): bool {
+	if ( user_can( $user, 'manage_options' ) ) {
+		return false;
+	}
+	$scoped   = function_exists( 'nsw_agency_scoped_types' ) ? nsw_agency_scoped_types() : array();
+	$can_edit = false;
+	foreach ( nsw_rest_supported_types() as $type ) {
+		$pto = get_post_type_object( $type );
+		if ( ! $pto ) {
+			continue;
+		}
+		$cap = $pto->cap;
+		if ( user_can( $user, $cap->publish_posts )
+			|| ( isset( $cap->edit_published_posts ) && user_can( $user, $cap->edit_published_posts ) ) ) {
+			return false;
+		}
+		if ( ! user_can( $user, $cap->edit_posts ) ) {
+			continue;
+		}
+		// News items and service guides: Agency Officer role with one agency.
+		if ( isset( $scoped[ $type ] )
+			&& ( ! nsw_is_agency_officer( $user ) || '' === nsw_user_agency( (int) $user->ID ) ) ) {
+			return false;
+		}
+		$can_edit = true;
+	}
+	return $can_edit;
+}
+
+add_filter(
+	'wp_is_application_passwords_available_for_user',
+	function ( $available, $user ) {
+		if ( ! $available || ! ( $user instanceof WP_User ) ) {
+			return false;
+		}
+		return nsw_rest_is_content_api_account( $user );
+	},
+	10,
+	2
+);

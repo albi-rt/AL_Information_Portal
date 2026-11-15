@@ -656,6 +656,45 @@ final class AgencyNewsTest extends TestCase {
 		);
 	}
 
+	/** Source: TSD 2.2.3, "Albanian (default) and English for all public pages". */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState(false)]
+	#[TestDox('On an Albanian page the agencies are listed under their Albanian names')]
+	public function test_agency_list_in_albanian_on_albanian_page(): void {
+		Functions\when( 'is_admin' )->justReturn( false );
+		$this->given_agencies_in_two_languages( 'sq' );
+
+		$this->assertSame(
+			array( self::FOOD => 'Agjencia Shembull e Ushqimit', self::CUSTOMS => 'Zyra Doganore Shembull' ),
+			nsw_agency_choices()
+		);
+	}
+
+	/** Source: theme behaviour, not specified in the TSD. */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState(false)]
+	#[TestDox('On an English page an agency without an English version is still listed, under its Albanian name')]
+	public function test_agency_list_english_page_keeps_agency_without_english_version(): void {
+		Functions\when( 'is_admin' )->justReturn( false );
+		$this->given_agencies_in_two_languages( 'en' );
+		// Only the customs office has an English version.
+		$albanian = array(
+			new \WP_Post( array( 'ID' => 11, 'post_type' => 'nsw_agency', 'post_name' => 'zyra-doganore', 'post_title' => 'Zyra Doganore Shembull' ) ),
+			new \WP_Post( array( 'ID' => 12, 'post_type' => 'nsw_agency', 'post_name' => 'agjencia-ushqimit', 'post_title' => 'Agjencia Shembull e Ushqimit' ) ),
+		);
+		$english  = array(
+			new \WP_Post( array( 'ID' => 21, 'post_type' => 'nsw_agency', 'post_name' => 'customs-office', 'post_title' => 'Example Customs Office' ) ),
+		);
+		Functions\when( 'get_posts' )->alias(
+			static fn( $args ) => 'en' === ( $args['lang'] ?? '' ) ? $english : $albanian
+		);
+
+		$this->assertSame(
+			array( self::FOOD => 'Agjencia Shembull e Ushqimit', self::CUSTOMS => 'Example Customs Office' ),
+			nsw_agency_choices()
+		);
+	}
+
 	/** Source: theme behaviour, not specified in the TSD. */
 	#[RunInSeparateProcess]
 	#[PreserveGlobalState(false)]
@@ -1353,6 +1392,33 @@ final class AgencyNewsTest extends TestCase {
 			$this->check( 'edit_post', 104 ),
 			'An Agency Officer without an agency can write and submit a new item.'
 		);
+	}
+
+	/**
+	 * Source: TSD 2.3.3, "an Agency Officer without one edits nothing" (TSD 2.5.2: "none
+	 * without an assigned agency"). WordPress checks this right before any new item of
+	 * the kind is written: in wp-admin, through the REST API and through the content API.
+	 */
+	#[TestDox('An Agency Officer without an assigned agency has no right to create news items or service guides')]
+	public function test_officer_without_agency_has_no_create_right(): void {
+		$this->sign_in( 'agency_officer', '' );
+		$callback = $this->theme_callback( 'map_meta_cap' );
+
+		$this->assertSame( array( 'do_not_allow' ), $callback( array( 'edit_posts' ), 'edit_posts', 7, array() ), 'news items' );
+		$this->assertSame( array( 'do_not_allow' ), $callback( array( 'edit_nsw_services' ), 'edit_nsw_services', 7, array() ), 'service guides' );
+		$this->assertSame( array( 'upload_files' ), $callback( array( 'upload_files' ), 'upload_files', 7, array() ), 'other rights' );
+	}
+
+	/** Source: TSD 2.2.2, "Agency Officers create and edit the news items and service guides of their own agency"; TSD 2.5.2, Administrator "no agency limit". */
+	#[TestDox('An Agency Officer with an assigned agency, and an administrator without one, keep the right to create news items and service guides')]
+	public function test_create_right_kept_with_agency_and_for_administrator(): void {
+		foreach ( array( array( 'agency_officer', self::CUSTOMS ), array( 'administrator', '' ) ) as [ $role, $agency ] ) {
+			$this->sign_in( $role, $agency );
+			$callback = $this->theme_callback( 'map_meta_cap' );
+
+			$this->assertSame( array( 'edit_posts' ), $callback( array( 'edit_posts' ), 'edit_posts', 7, array() ), "$role: news items" );
+			$this->assertSame( array( 'edit_nsw_services' ), $callback( array( 'edit_nsw_services' ), 'edit_nsw_services', 7, array() ), "$role: service guides" );
+		}
 	}
 
 	/** Source: TSD 2.5.2, Administrator "no agency limit". */

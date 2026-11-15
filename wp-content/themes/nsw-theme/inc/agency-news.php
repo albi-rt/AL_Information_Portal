@@ -6,8 +6,10 @@
  *
  * - Each user can be assigned one agency (a field on their profile).
  * - Each scoped post carries an agency (auto for officers; a dropdown for admins).
+ *   No REST API (core /wp/v2 or the content API) can set or change it.
  * - An Agency Officer only sees their agency's items in wp-admin, and can only
- *   edit/delete that agency's items.
+ *   edit/delete that agency's items. An officer without an assigned agency
+ *   writes nothing, not even a new item.
  *
  * The set of scoped post types and their per-type agency meta key + approval-
  * bypass capabilities is declared once in nsw_agency_scoped_types(); every
@@ -46,6 +48,10 @@ function nsw_agency_officer_role(): string {
  *
  * Each entry maps a post type to:
  *  - 'meta':   the post meta key that stores the item's agency stable id.
+ *  - 'create': the type's create capability (its cap->create_posts, which
+ *              WordPress checks before any new item of the type is written in
+ *              wp-admin, through /wp/v2 or through the content API). Refused to
+ *              an Agency Officer without an assigned agency (section 6).
  *  - 'bypass': the capabilities that, if granted to the officer role, would let
  *              officers skip admin approval (used only by the drift guard in
  *              section 7 — theme code never adds or removes them).
@@ -57,10 +63,12 @@ function nsw_agency_scoped_types(): array {
 	return array(
 		'post'        => array(
 			'meta'   => '_nsw_news_agency',
+			'create' => 'edit_posts',
 			'bypass' => array( 'publish_posts', 'edit_published_posts', 'delete_published_posts' ),
 		),
 		'nsw_service' => array(
 			'meta'   => '_nsw_service_agency',
+			'create' => 'edit_nsw_services',
 			'bypass' => array( 'publish_nsw_services', 'edit_published_nsw_services', 'delete_published_nsw_services' ),
 		),
 	);
@@ -81,12 +89,48 @@ function nsw_is_agency_officer( ?WP_User $user = null ): bool {
 	return in_array( nsw_agency_officer_role(), (array) $user->roles, true );
 }
 
-/** All agencies as [ stable_id => display_name ], deduped across languages. */
+/**
+ * All agencies as [ stable_id => display_name ], one entry per agency (not one
+ * per sq/en post), sorted by name.
+ *
+ * In wp-admin the names are in the default language. On a public page they are
+ * in the language of the page; an agency that has no version in that language
+ * keeps its default-language name rather than dropping out of the list.
+ */
 function nsw_agency_choices(): array {
-	static $cache = null;
-	if ( null !== $cache ) {
-		return $cache;
+	static $cache = array();
+
+	$default = '';
+	$lang    = '';
+	if ( function_exists( 'pll_default_language' ) ) {
+		$default = (string) pll_default_language( 'slug' );
+		$lang    = $default;
+		if ( ! is_admin() && function_exists( 'pll_current_language' ) ) {
+			$current = (string) pll_current_language( 'slug' );
+			if ( '' !== $current ) {
+				$lang = $current;
+			}
+		}
 	}
+	if ( isset( $cache[ $lang ] ) ) {
+		return $cache[ $lang ];
+	}
+
+	$out = nsw_agency_names_in_language( $default );
+	if ( $lang !== $default ) {
+		// array_replace keeps the stable ids as keys, even numeric-looking ones.
+		$out = array_replace( $out, nsw_agency_names_in_language( $lang ) );
+	}
+	asort( $out );
+	$cache[ $lang ] = $out;
+	return $out;
+}
+
+/**
+ * The published agencies of one language as [ stable_id => name ], unsorted.
+ * An empty $lang means no language plugin: every agency post is read.
+ */
+function nsw_agency_names_in_language( string $lang ): array {
 	$args = array(
 		'post_type'      => 'nsw_agency',
 		'post_status'    => 'publish',
@@ -95,23 +139,29 @@ function nsw_agency_choices(): array {
 		'order'          => 'ASC',
 		'no_found_rows'  => true,
 	);
-	// One language only, so we list 14 agencies rather than the 28 sq/en posts.
-	if ( function_exists( 'pll_default_language' ) ) {
-		$args['lang'] = pll_default_language( 'slug' );
+	if ( '' !== $lang ) {
+		$args['lang'] = $lang;
 	}
 	$out = array();
 	foreach ( get_posts( $args ) as $agency ) {
-		$id   = (string) get_post_meta( $agency->ID, '_nsw_theme_agency_id', true );
-		$id   = '' !== $id ? $id : $agency->post_name;
-		$name = (string) get_post_meta( $agency->ID, '_nsw_theme_agency_name', true );
+		$id         = (string) get_post_meta( $agency->ID, '_nsw_theme_agency_id', true );
+		$id         = '' !== $id ? $id : $agency->post_name;
+		$name       = (string) get_post_meta( $agency->ID, '_nsw_theme_agency_name', true );
 		$out[ $id ] = '' !== $name ? $name : get_the_title( $agency );
 	}
-	asort( $out );
-	return $cache = $out;
+	return $out;
 }
 
 /* --------------------------------------------------------------------------
  * 1. Scoped types → agency meta
+ *
+ * No REST API can set or change the agency, for any user, administrators
+ * included. The key is kept out of show_in_rest, so core /wp/v2 ignores it and
+ * the content API (inc/rest-api.php) refuses it with HTTP 400, and its
+ * auth_callback refuses every edit/add/delete_post_meta check (REST, XML-RPC
+ * custom fields). The theme writes the value itself in section 4: an officer's
+ * items take the officer's assigned agency; administrators choose it in the
+ * wp-admin Agency box.
  * -------------------------------------------------------------------------- */
 
 add_action(
@@ -122,13 +172,11 @@ add_action(
 				$type,
 				$conf['meta'],
 				array(
-					'show_in_rest'      => true,
+					'show_in_rest'      => false,
 					'single'            => true,
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
-					'auth_callback'     => function () {
-						return current_user_can( 'edit_posts' );
-					},
+					'auth_callback'     => '__return_false',
 				)
 			);
 		}
@@ -310,34 +358,49 @@ add_action(
  * `copy_post` at priority 5), so returning `do_not_allow` here still vetoes
  * cross-agency. The scoped post type and its agency meta key come from the
  * registry, so News and Services are enforced identically.
+ *
+ * An officer without an assigned agency writes nothing: besides every item
+ * check above, the type's create capability (registry 'create') is refused, so
+ * no new news item or service guide can be started in wp-admin, through /wp/v2
+ * or through the content API, whose permission check uses the same capability.
  * -------------------------------------------------------------------------- */
 
 add_filter(
 	'map_meta_cap',
 	function ( $caps, $cap, $user_id, $args ) {
-		if ( ! in_array( $cap, array( 'edit_post', 'delete_post', 'publish_post', 'copy_post' ), true ) ) {
+		$types       = nsw_agency_scoped_types();
+		$is_item_cap = in_array( $cap, array( 'edit_post', 'delete_post', 'publish_post', 'copy_post' ), true );
+		// Cheap name test first: this filter runs for every capability check.
+		if ( ! $is_item_cap && ! in_array( $cap, array_column( $types, 'create' ), true ) ) {
 			return $caps;
 		}
 		$user = get_user_by( 'id', $user_id );
 		if ( ! $user || ! nsw_is_agency_officer( $user ) ) {
 			return $caps;
 		}
+		$their_agency = nsw_user_agency( $user_id );
+		if ( ! $is_item_cap ) {
+			// Creating items of a scoped type: only with an assigned agency.
+			return '' === $their_agency ? array( 'do_not_allow' ) : $caps;
+		}
 		$post_id = isset( $args[0] ) ? (int) $args[0] : 0;
 		if ( ! $post_id ) {
 			return $caps;
 		}
-		$types = nsw_agency_scoped_types();
-		$conf  = $types[ get_post_type( $post_id ) ] ?? null;
+		$conf = $types[ get_post_type( $post_id ) ] ?? null;
 		if ( ! $conf ) {
 			return $caps;
 		}
-		// Allow the brand-new auto-draft so officers can create content.
+		if ( '' === $their_agency ) {
+			return array( 'do_not_allow' );
+		}
+		// Allow the brand-new auto-draft so officers can create content; it takes
+		// their agency on its first save (section 4).
 		if ( 'auto-draft' === get_post_status( $post_id ) ) {
 			return $caps;
 		}
-		$post_agency  = (string) get_post_meta( $post_id, $conf['meta'], true );
-		$their_agency = nsw_user_agency( $user_id );
-		if ( '' === $their_agency || $post_agency !== $their_agency ) {
+		$post_agency = (string) get_post_meta( $post_id, $conf['meta'], true );
+		if ( $post_agency !== $their_agency ) {
 			return array( 'do_not_allow' );
 		}
 		return $caps;
