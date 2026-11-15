@@ -101,6 +101,7 @@ final class PostTypesTest extends TestCase {
 	 * The permission names WordPress derives from a content type's settings, the way
 	 * WordPress does it: the capability type in its singular and plural form, then any
 	 * names given one by one, and the right to create defaults to the right to edit.
+	 * Mirrors get_post_type_capabilities() in wp-includes/post.php.
 	 *
 	 * @param array<string, mixed> $args
 	 * @return array<string, string>
@@ -123,9 +124,22 @@ final class PostTypesTest extends TestCase {
 				'publish_posts'          => 'publish_' . $plural,
 				'edit_published_posts'   => 'edit_published_' . $plural,
 				'delete_published_posts' => 'delete_published_' . $plural,
+				'read_post'              => 'read_' . $singular,
+				'delete_posts'           => 'delete_' . $plural,
+				'read_private_posts'     => 'read_private_' . $plural,
 			),
 			(array) ( $args['capabilities'] ?? array() )
 		);
+		// With per-item checks, WordPress also derives the names those checks are mapped
+		// onto; a name given one by one still wins.
+		if ( ! empty( $args['map_meta_cap'] ) ) {
+			$caps += array(
+				'read'                 => 'read',
+				'delete_private_posts' => 'delete_private_' . $plural,
+				'delete_others_posts'  => 'delete_others_' . $plural,
+				'edit_private_posts'   => 'edit_private_' . $plural,
+			);
+		}
 		if ( ! isset( $caps['create_posts'] ) ) {
 			$caps['create_posts'] = $caps['edit_posts'];
 		}
@@ -412,7 +426,6 @@ final class PostTypesTest extends TestCase {
 	}
 
 	/** Source: TSD 2.5.2, "Agency Officers have no access to ... agencies, partners or FAQ items". */
-	#[Group('tsd-difference')]
 	#[TestDox('Agencies need a permission of their own, so an Agency Officer who edits news items cannot create or edit them')]
 	public function test_agencies_need_own_permission(): void {
 		$this->run_init();
@@ -423,7 +436,6 @@ final class PostTypesTest extends TestCase {
 	}
 
 	/** Source: TSD 2.5.2, "Agency Officers have no access to ... agencies, partners or FAQ items". */
-	#[Group('tsd-difference')]
 	#[TestDox('Partners need a permission of their own, so an Agency Officer who edits news items cannot create or edit them')]
 	public function test_partners_need_own_permission(): void {
 		$this->run_init();
@@ -434,7 +446,6 @@ final class PostTypesTest extends TestCase {
 	}
 
 	/** Source: TSD 2.5.2, "Agency Officers have no access to ... agencies, partners or FAQ items". */
-	#[Group('tsd-difference')]
 	#[TestDox('FAQ items need a permission of their own, so an Agency Officer who edits news items cannot create or edit them')]
 	public function test_faq_items_need_own_permission(): void {
 		$this->run_init();
@@ -442,6 +453,35 @@ final class PostTypesTest extends TestCase {
 		$this->assertNotSame( 'edit_posts', $caps['create_posts'], 'FAQ items are created with the news item permission' );
 		$this->assertNotSame( 'edit_posts', $caps['edit_posts'], 'FAQ items are edited with the news item permission' );
 		$this->assertNotSame( 'edit_others_posts', $caps['edit_others_posts'], 'Other users\' FAQ items are edited with the news item permission' );
+	}
+
+	/** Source: TSD 2.5.2, "Agency Officers have no access to ... agencies, partners or FAQ items"; Administrator "All content". */
+	#[TestDox('Agencies, partners and FAQ items each have their own permissions, and the administrator role is given all of them')]
+	public function test_agency_partner_faq_permissions_given_to_administrators(): void {
+		$this->run_init();
+		$expected = array(
+			'nsw_agency'  => array( 'nsw_agency', 'nsw_agencies' ),
+			'nsw_partner' => array( 'nsw_partner', 'nsw_partners' ),
+			'nsw_faq'     => array( 'nsw_faq', 'nsw_faqs' ),
+		);
+		$given   = nsw_theme_agency_partner_faq_caps();
+		$derived = array();
+		foreach ( $expected as $type => $capability_type ) {
+			$this->assertSame( $capability_type, $this->post_types[ $type ]['capability_type'], $type );
+			$this->assertTrue( $this->post_types[ $type ]['map_meta_cap'], "$type must check permissions per item" );
+			$caps = $this->capabilities_of( $this->post_types[ $type ] );
+			// Checked per item and mapped by WordPress onto the others, never held by a
+			// role; and every role already has 'read'.
+			unset( $caps['edit_post'], $caps['read_post'], $caps['delete_post'], $caps['read'] );
+			foreach ( $caps as $permission ) {
+				$this->assertContains( $permission, $given, "$type: the administrator role is not given $permission" );
+				$derived[] = $permission;
+			}
+		}
+		$derived = array_values( array_unique( $derived ) );
+		sort( $derived );
+		sort( $given );
+		$this->assertSame( $derived, $given, 'The administrator role must be given exactly the permissions WordPress uses for these content types, each once' );
 	}
 
 	/* ------------------------------------------------------------ FAQ categories */

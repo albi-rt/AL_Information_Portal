@@ -1,8 +1,9 @@
 <?php
 /**
  * Unit tests for inc/migrations.php: the one-off data updates that a new release makes
- * to the existing content, and the update that creates the Services page in Albanian
- * and English.
+ * to the existing content, the update that creates the Services page in Albanian
+ * and English, and the update that gives the administrator role the permissions for
+ * agencies, partners and FAQ items.
  *
  * Each update runs once, on the first administration page load by an administrator
  * after a release, under a short lock. A completed update is recorded so it never runs
@@ -13,10 +14,11 @@
  * Expected behaviour comes from the Information Portal Technical Specification (TSD),
  * sections 2.2.1 (Data migrations component), 2.3.2 (run once, under a 2-minute lock,
  * safe to run twice), 2.3.3 (the stored record and the lock), 2.6.1 (run on the next
- * administrator load) and 2.6.2 (failed data migrations are logged), and from the
- * Software Development Package (SDP), section 5.4, step 9 (the Services page in each
- * language). Where today's code differs from the TSD, the test expects the TSD and is
- * in the group "tsd-difference".
+ * administrator load), 2.6.2 (failed data migrations are logged) and 2.5.2 (who may
+ * edit agencies, partners and FAQ items), and from the Software Development Package
+ * (SDP), section 5.4, step 9 (the Services page in each language). Where today's
+ * code differs from the TSD, the test expects the TSD and is in the group
+ * "tsd-difference".
  *
  * Tests that run updates need the WordPress time constant MINUTE_IN_SECONDS, so they
  * run in a separate PHP process where it can be defined.
@@ -35,6 +37,51 @@ use PHPUnit\Framework\Attributes\TestDox;
 final class MigrationsTest extends TestCase {
 
 	private const SERVICES_UPDATE = 'create-services-page-2026-08';
+
+	private const ADMIN_RIGHTS_UPDATE = 'admin-caps-agency-partner-faq-2026-11';
+
+	/** Every permission of the agency, partner and FAQ content types that a role can hold. */
+	private const AGENCY_PARTNER_FAQ_RIGHTS = array(
+		'edit_nsw_agencies',
+		'edit_others_nsw_agencies',
+		'edit_private_nsw_agencies',
+		'edit_published_nsw_agencies',
+		'publish_nsw_agencies',
+		'read_private_nsw_agencies',
+		'delete_nsw_agencies',
+		'delete_others_nsw_agencies',
+		'delete_private_nsw_agencies',
+		'delete_published_nsw_agencies',
+		'edit_nsw_partners',
+		'edit_others_nsw_partners',
+		'edit_private_nsw_partners',
+		'edit_published_nsw_partners',
+		'publish_nsw_partners',
+		'read_private_nsw_partners',
+		'delete_nsw_partners',
+		'delete_others_nsw_partners',
+		'delete_private_nsw_partners',
+		'delete_published_nsw_partners',
+		'edit_nsw_faqs',
+		'edit_others_nsw_faqs',
+		'edit_private_nsw_faqs',
+		'edit_published_nsw_faqs',
+		'publish_nsw_faqs',
+		'read_private_nsw_faqs',
+		'delete_nsw_faqs',
+		'delete_others_nsw_faqs',
+		'delete_private_nsw_faqs',
+		'delete_published_nsw_faqs',
+	);
+
+	/** Permissions an administrator role has before the update (a sample). */
+	private const ADMIN_BEFORE = array( 'read' => true, 'manage_options' => true, 'edit_posts' => true, 'edit_nsw_services' => true );
+
+	/** Permissions an Agency Officer role has (a sample). */
+	private const OFFICER_BEFORE = array( 'read' => true, 'edit_posts' => true, 'edit_nsw_services' => true, 'upload_files' => true );
+
+	/** @var array<int, string> role names the code asked for, in order */
+	private array $roles_asked = array();
 
 	/** @var array<string, mixed> simulated stored settings */
 	private array $options = array();
@@ -173,13 +220,152 @@ final class MigrationsTest extends TestCase {
 		return $this->inserted[ $index ]['args'];
 	}
 
+	/**
+	 * A role as WordPress keeps it: its permissions (true = granted, false = refused),
+	 * and the permissions that were added to it, in order.
+	 *
+	 * @param array<string, bool> $capabilities
+	 */
+	private function role_with( array $capabilities ): object {
+		return new class( $capabilities ) {
+			/** @var array<string, bool> */
+			public array $capabilities;
+			/** @var array<int, string> */
+			public array $added = array();
+
+			public function __construct( array $capabilities ) {
+				$this->capabilities = $capabilities;
+			}
+
+			public function add_cap( $cap, $grant = true ): void {
+				$this->capabilities[ $cap ] = (bool) $grant;
+				$this->added[]              = $cap;
+			}
+		};
+	}
+
+	/**
+	 * Simulates the site's roles. A role that is not listed does not exist.
+	 *
+	 * @param array<string, object> $roles role name => role
+	 */
+	private function simulate_roles( array $roles ): void {
+		Functions\when( 'get_role' )->alias(
+			function ( $name ) use ( $roles ) {
+				$this->roles_asked[] = $name;
+				return $roles[ $name ] ?? null;
+			}
+		);
+	}
+
 	/* ---------------------------------------------------------- list of updates */
 
 	/** Source: SDP 5.4, step 9, data migrations create the "Services page in each language". */
 	#[TestDox('This release\'s data updates include creating the Services page')]
 	public function test_release_updates(): void {
-		$this->assertSame( array( self::SERVICES_UPDATE => 'nsw_theme_migrate_create_services_page' ), nsw_theme_migrations() );
+		$this->assertSame(
+			array(
+				self::SERVICES_UPDATE     => 'nsw_theme_migrate_create_services_page',
+				self::ADMIN_RIGHTS_UPDATE => 'nsw_theme_migrate_admin_caps_agency_partner_faq',
+			),
+			nsw_theme_migrations()
+		);
 		$this->assertTrue( is_callable( nsw_theme_migrations()[ self::SERVICES_UPDATE ] ) );
+	}
+
+	/** Source: TSD 2.5.2, "Agency Officers have no access to ... agencies, partners or FAQ items"; TSD 2.2.1, "Run-once data updates per release". */
+	#[TestDox('This release\'s data updates include giving the administrator role the new permissions for agencies, partners and FAQ items')]
+	public function test_admin_rights_update_listed(): void {
+		$updates = nsw_theme_migrations();
+		$this->assertArrayHasKey( self::ADMIN_RIGHTS_UPDATE, $updates );
+		$this->assertSame( 'nsw_theme_migrate_admin_caps_agency_partner_faq', $updates[ self::ADMIN_RIGHTS_UPDATE ] );
+		$this->assertTrue( is_callable( $updates[ self::ADMIN_RIGHTS_UPDATE ] ) );
+	}
+
+	/* ------------------------------------------- administrator permissions update */
+
+	/** Source: TSD 2.5.2, Administrator "All content". */
+	#[TestDox('The administrator role is given every permission for agencies, partners and FAQ items, and keeps the permissions it had')]
+	public function test_admin_given_every_right(): void {
+		$admin = $this->role_with( self::ADMIN_BEFORE );
+		$this->simulate_roles( array( 'administrator' => $admin ) );
+
+		nsw_theme_migrate_admin_caps_agency_partner_faq();
+
+		$this->assertSame( self::AGENCY_PARTNER_FAQ_RIGHTS, nsw_theme_agency_partner_faq_caps() );
+		$this->assertSame( self::AGENCY_PARTNER_FAQ_RIGHTS, $admin->added );
+		foreach ( self::AGENCY_PARTNER_FAQ_RIGHTS as $right ) {
+			$this->assertTrue( $admin->capabilities[ $right ], "The administrator role is not given $right" );
+		}
+		foreach ( self::ADMIN_BEFORE as $right => $granted ) {
+			$this->assertSame( $granted, $admin->capabilities[ $right ], "The administrator role lost $right" );
+		}
+		$this->assertCount( count( self::ADMIN_BEFORE ) + 30, $admin->capabilities );
+	}
+
+	/** Source: TSD 2.5.2, "Agency Officers have no access to pages, events, documents, agencies, partners or FAQ items" and "Other default roles are unused". */
+	#[TestDox('The Agency Officer role and the other roles are given none of these permissions')]
+	public function test_officer_given_no_rights(): void {
+		$others = array(
+			'agency_officer' => $this->role_with( self::OFFICER_BEFORE ),
+			'editor'         => $this->role_with( array( 'read' => true, 'edit_posts' => true, 'edit_others_posts' => true ) ),
+			'author'         => $this->role_with( array( 'read' => true, 'edit_posts' => true ) ),
+			'contributor'    => $this->role_with( array( 'read' => true, 'edit_posts' => true ) ),
+			'subscriber'     => $this->role_with( array( 'read' => true ) ),
+		);
+		$before = array_map( static fn( object $role ): array => $role->capabilities, $others );
+		$this->simulate_roles( array( 'administrator' => $this->role_with( self::ADMIN_BEFORE ) ) + $others );
+
+		nsw_theme_migrate_admin_caps_agency_partner_faq();
+
+		$this->assertSame( array( 'administrator' ), $this->roles_asked, 'Only the administrator role may be changed' );
+		foreach ( $others as $name => $role ) {
+			$this->assertSame( array(), $role->added, "The $name role was given permissions" );
+			$this->assertSame( $before[ $name ], $role->capabilities, "The $name role was changed" );
+		}
+		$this->assertSame( array(), array_intersect( self::AGENCY_PARTNER_FAQ_RIGHTS, array_keys( $others['agency_officer']->capabilities ) ) );
+	}
+
+	/** Source: theme behaviour, not specified in the TSD. */
+	#[TestDox('If the site has no administrator role, the update ends without an error and gives the permissions to no other role')]
+	public function test_admin_rights_without_admin_role(): void {
+		$officer = $this->role_with( self::OFFICER_BEFORE );
+		$editor  = $this->role_with( array( 'read' => true, 'edit_posts' => true ) );
+		$this->simulate_roles( array( 'agency_officer' => $officer, 'editor' => $editor ) );
+
+		nsw_theme_migrate_admin_caps_agency_partner_faq();
+
+		$this->assertSame( array( 'administrator' ), $this->roles_asked );
+		$this->assertSame( array(), $officer->added );
+		$this->assertSame( self::OFFICER_BEFORE, $officer->capabilities );
+		$this->assertSame( array(), $editor->added );
+	}
+
+	/** Source: TSD 2.3.2, "Migrations run once ... and are safe to run twice". */
+	#[TestDox('Running the administrator permissions update again changes nothing')]
+	public function test_admin_rights_update_safe_to_repeat(): void {
+		$admin = $this->role_with( self::ADMIN_BEFORE );
+		$this->simulate_roles( array( 'administrator' => $admin ) );
+
+		nsw_theme_migrate_admin_caps_agency_partner_faq();
+		$after_first = $admin->capabilities;
+		nsw_theme_migrate_admin_caps_agency_partner_faq();
+
+		$this->assertSame( $after_first, $admin->capabilities );
+		$this->assertSame( self::AGENCY_PARTNER_FAQ_RIGHTS, $admin->added, 'The second run must add nothing' );
+	}
+
+	/** Source: TSD 2.5.2, "capabilities are Members configuration". */
+	#[TestDox('A permission the administrator role already has, or that was refused to it in the role settings, is left as it is')]
+	public function test_admin_rights_existing_settings_kept(): void {
+		$admin = $this->role_with( self::ADMIN_BEFORE + array( 'edit_nsw_agencies' => true, 'delete_nsw_faqs' => false ) );
+		$this->simulate_roles( array( 'administrator' => $admin ) );
+
+		nsw_theme_migrate_admin_caps_agency_partner_faq();
+
+		$this->assertTrue( $admin->capabilities['edit_nsw_agencies'] );
+		$this->assertFalse( $admin->capabilities['delete_nsw_faqs'], 'A refused permission must stay refused' );
+		$this->assertSame( array_values( array_diff( self::AGENCY_PARTNER_FAQ_RIGHTS, array( 'edit_nsw_agencies', 'delete_nsw_faqs' ) ) ), $admin->added );
 	}
 
 	/* ------------------------------------------------------- Services page update */
@@ -517,12 +703,67 @@ final class MigrationsTest extends TestCase {
 		$this->signed_in_as_administrator();
 		$this->simulate_pages( array(), array( 101, 102 ) );
 		$this->simulate_language_plugin();
+		$this->simulate_roles( array( 'administrator' => $this->role_with( self::ADMIN_BEFORE ) ) );
 
 		$this->runner()();
 
 		$this->assertSame( array( 'sherbime', 'services' ), array_column( array_column( $this->inserted, 'args' ), 'post_name' ) );
 		$this->assertSame( array( array( 'sq' => 101, 'en' => 102 ) ), $this->linked );
-		$this->assertSame( array( self::SERVICES_UPDATE ), $this->options['nsw_theme_migrations_done'] );
+		$this->assertSame( array( self::SERVICES_UPDATE, self::ADMIN_RIGHTS_UPDATE ), $this->options['nsw_theme_migrations_done'] );
+		$this->assertSame( array(), $this->transients );
+	}
+
+	/** Source: TSD 2.6.1, "Data migrations run once on the next administrator wp-admin load"; TSD 2.5.2, Administrator "All content". */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState(false)]
+	#[TestDox('On the first administrator page load after the release, the administrator role is given the new permissions once and the update is recorded')]
+	public function test_admin_rights_given_on_first_load(): void {
+		$this->define_time_constants();
+		$this->simulate_database();
+		$this->signed_in_as_administrator();
+		// The Services page update ran with an earlier release.
+		$this->options['nsw_theme_migrations_done'] = array( self::SERVICES_UPDATE );
+		$admin   = $this->role_with( self::ADMIN_BEFORE );
+		$officer = $this->role_with( self::OFFICER_BEFORE );
+		$this->simulate_roles( array( 'administrator' => $admin, 'agency_officer' => $officer ) );
+
+		$this->runner()();
+		$this->runner()();
+
+		$this->assertSame( self::AGENCY_PARTNER_FAQ_RIGHTS, $admin->added );
+		$this->assertSame( array(), $officer->added );
+		$this->assertSame( array( self::SERVICES_UPDATE, self::ADMIN_RIGHTS_UPDATE ), $this->options['nsw_theme_migrations_done'] );
+		$this->assertSame( array(), $this->inserted, 'The Services page update must not run again' );
+		$this->assertSame( array(), $this->transients );
+	}
+
+	/** Source: theme behaviour, not specified in the TSD. */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState(false)]
+	#[TestDox('If the site has no administrator role, the administrator permissions update ends without an error and is recorded, so it does not run again')]
+	public function test_admin_rights_without_admin_role_recorded(): void {
+		$this->define_time_constants();
+		$this->simulate_database();
+		$this->signed_in_as_administrator();
+		$this->options['nsw_theme_migrations_done'] = array( self::SERVICES_UPDATE );
+		$officer = $this->role_with( self::OFFICER_BEFORE );
+		$this->simulate_roles( array( 'agency_officer' => $officer ) );
+		$logged = array();
+		Functions\when( 'error_log' )->alias(
+			static function ( $message ) use ( &$logged ) {
+				$logged[] = $message;
+				return true;
+			}
+		);
+
+		$this->runner()();
+		$this->runner()();
+
+		$this->assertSame( array(), $logged, 'A missing administrator role is not a failure' );
+		$this->assertSame( array( self::SERVICES_UPDATE, self::ADMIN_RIGHTS_UPDATE ), $this->options['nsw_theme_migrations_done'] );
+		$this->assertSame( array( 'administrator' ), $this->roles_asked, 'The update must run once and look only for the administrator role' );
+		$this->assertSame( array(), $officer->added );
+		$this->assertSame( self::OFFICER_BEFORE, $officer->capabilities );
 		$this->assertSame( array(), $this->transients );
 	}
 
@@ -538,6 +779,7 @@ final class MigrationsTest extends TestCase {
 		// First load: the Albanian page is created, the English one fails. Second load: it works.
 		$this->simulate_pages( array(), array( 101, new \WP_Error( 'db_insert_error', 'Could not insert post into the database.' ), 102 ) );
 		$this->simulate_language_plugin();
+		$this->simulate_roles( array( 'administrator' => $this->role_with( self::ADMIN_BEFORE ) ) );
 		$logged = array();
 		Functions\when( 'error_log' )->alias(
 			static function ( $message ) use ( &$logged ) {
@@ -559,6 +801,7 @@ final class MigrationsTest extends TestCase {
 
 		$this->assertSame( array( 101 => 'sq', 102 => 'en' ), $this->languages, 'The English page must be created on the next load' );
 		$this->assertSame( array( 'sq' => 101, 'en' => 102 ), end( $this->linked ) );
-		$this->assertSame( array( self::SERVICES_UPDATE ), $this->options['nsw_theme_migrations_done'] );
+		// The administrator permissions update succeeds on the first load, the Services page update on the second.
+		$this->assertSame( array( self::ADMIN_RIGHTS_UPDATE, self::SERVICES_UPDATE ), $this->options['nsw_theme_migrations_done'] );
 	}
 }

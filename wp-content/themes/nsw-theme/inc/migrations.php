@@ -2,11 +2,12 @@
 /**
  * Run-once, idempotent data migrations.
  *
- * Definition changes (post types, taxonomies, meta registration, capabilities,
- * hooks, block behavior) are pure code and need NO migration — they take effect
- * the moment the theme deploys. This runner is only for reshaping EXISTING data
- * (backfills, one-time conversions), so such changes ride along with a git
- * deploy and self-apply on production without any DB export/import.
+ * Definition changes (post types, taxonomies, meta registration, capability
+ * names, hooks, block behavior) are pure code and need NO migration — they take
+ * effect the moment the theme deploys. This runner is only for reshaping EXISTING
+ * data (backfills, one-time conversions, granting a new capability to an existing
+ * role, since roles are stored in the database), so such changes ride along with
+ * a git deploy and self-apply on production without any DB export/import.
  *
  * How to add a migration:
  *   1. Add an entry to nsw_theme_migrations() keyed by a unique, stable slug.
@@ -32,8 +33,56 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function nsw_theme_migrations(): array {
 	return array(
-		'create-services-page-2026-08' => 'nsw_theme_migrate_create_services_page',
+		'create-services-page-2026-08'          => 'nsw_theme_migrate_create_services_page',
+		'admin-caps-agency-partner-faq-2026-11' => 'nsw_theme_migrate_admin_caps_agency_partner_faq',
 	);
+}
+
+/**
+ * The primitive capabilities of the agency, partner and FAQ content types, which
+ * have their own capability types (nsw_agencies, nsw_partners, nsw_faqs; see
+ * inc/post-types.php). These are the names WordPress derives for a capability
+ * type with map_meta_cap, except 'read', which every role already has. The meta
+ * capabilities (edit_nsw_agency, ...) are never granted to a role; WordPress maps
+ * them onto these.
+ *
+ * @return array<int, string>
+ */
+function nsw_theme_agency_partner_faq_caps(): array {
+	$caps = array();
+	foreach ( array( 'nsw_agencies', 'nsw_partners', 'nsw_faqs' ) as $plural ) {
+		foreach ( array( 'edit', 'edit_others', 'edit_private', 'edit_published', 'publish', 'read_private', 'delete', 'delete_others', 'delete_private', 'delete_published' ) as $action ) {
+			$caps[] = $action . '_' . $plural;
+		}
+	}
+	return $caps;
+}
+
+/**
+ * Grant the new agency, partner and FAQ capabilities to the administrator role.
+ *
+ * Until this release these types used the news item ('post') capabilities, so
+ * Agency Officers could edit them (TSD 2.5.2 says they have no access). With
+ * their own capability types nobody holds the new capabilities yet, and without
+ * this grant administrators would lose the Agencies, Partners and FAQ menus.
+ *
+ * Only the administrator role is changed: the Agency Officer role and every other
+ * role are left as they are (roles are Members configuration). Idempotent: a
+ * capability the role already lists, granted or explicitly denied in Members, is
+ * left untouched, so running it again writes nothing. Without an administrator
+ * role there is nothing to grant and it returns quietly.
+ */
+function nsw_theme_migrate_admin_caps_agency_partner_faq(): void {
+	$role = get_role( 'administrator' );
+	if ( ! $role ) {
+		return;
+	}
+	$current = (array) $role->capabilities;
+	foreach ( nsw_theme_agency_partner_faq_caps() as $cap ) {
+		if ( ! array_key_exists( $cap, $current ) ) {
+			$role->add_cap( $cap );
+		}
+	}
 }
 
 /**

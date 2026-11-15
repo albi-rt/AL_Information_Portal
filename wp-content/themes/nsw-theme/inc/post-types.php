@@ -138,7 +138,10 @@ add_action(
 				'menu_position'      => 8,
 				// 'custom-fields' exposes the registered meta to the REST API.
 				'supports'           => array( 'title', 'thumbnail', 'author', 'custom-fields' ),
-				'capability_type'    => 'post',
+				// Own permissions, separate from news items, so the news rights of an
+				// Agency Officer give no access here (TSD 2.5.2). Granted to the
+				// administrator role by a data migration (inc/migrations.php).
+				'capability_type'    => array( 'nsw_agency', 'nsw_agencies' ),
 				'map_meta_cap'       => true,
 			)
 		);
@@ -171,7 +174,8 @@ add_action(
 				'menu_position'      => 9,
 				// 'custom-fields' exposes the registered meta to the REST API.
 				'supports'           => array( 'title', 'thumbnail', 'author', 'custom-fields' ),
-				'capability_type'    => 'post',
+				// Own permissions, like agencies (see above).
+				'capability_type'    => array( 'nsw_partner', 'nsw_partners' ),
 				'map_meta_cap'       => true,
 			)
 		);
@@ -202,7 +206,8 @@ add_action(
 				'menu_icon'          => 'dashicons-editor-help',
 				'menu_position'      => 10,
 				'supports'           => array( 'title', 'editor', 'author' ),
-				'capability_type'    => 'post',
+				// Own permissions, like agencies (see above).
+				'capability_type'    => array( 'nsw_faq', 'nsw_faqs' ),
 				'map_meta_cap'       => true,
 				'taxonomies'         => array( 'nsw_faq_category' ),
 			)
