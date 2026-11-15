@@ -1,0 +1,73 @@
+# Unit tests of the Information Portal theme (wp-content/themes/nsw-theme).
+#
+# Runs on every push and pull request, on the PHP version of the servers (8.2).
+# 1. The full suite runs with coverage and writes the JUnit report, the test list
+#    and the coverage report. Tests in the group "tsd-difference" check behaviour
+#    the TSD describes but the code does not have yet; they fail until it is built.
+# 2. The gate runs every other test. Any failure there fails the build.
+# 3. The run summary shows both counts and the coverage per file.
+# The reports are kept as the "unit-test-report" artifact of each run.
+
+name: Unit tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: pcov
+          tools: composer:v2
+
+      - name: Install the test tools
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Full suite with coverage
+        id: full
+        continue-on-error: true
+        run: >
+          vendor/bin/phpunit --do-not-cache-result
+          --coverage-clover build/clover.xml
+          --coverage-html build/coverage
+          --log-junit build/junit.xml
+          --testdox-text build/testdox.txt
+
+      - name: Gate (all tests except the open TSD differences)
+        run: vendor/bin/phpunit --do-not-cache-result --exclude-group tsd-difference
+
+      - name: Summary
+        if: always()
+        run: |
+          php -r '
+            $x = simplexml_load_file("build/junit.xml");
+            $s = $x->testsuite;
+            printf("## Unit tests, commit %s\n\n", getenv("GITHUB_SHA"));
+            printf("| Tests | Passed | Failed | Errors | Skipped |\n|---|---|---|---|---|\n| %d | %d | %d | %d | %d |\n\n",
+              $s["tests"], $s["tests"] - $s["failures"] - $s["errors"] - $s["skipped"], $s["failures"], $s["errors"], $s["skipped"]);
+          ' >> "$GITHUB_STEP_SUMMARY"
+          echo "### Open TSD differences (tests that fail until the behaviour is built)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          vendor/bin/phpunit --do-not-cache-result --group tsd-difference --testdox 2>&1 | grep -E "✘" | sed -E 's/ with data set.*//' | uniq >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "### Line coverage of inc/ and functions.php" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          php tests/tools/coverage-by-file.php build/clover.xml | sed -E 's/  uncovered:.*//' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: build/
+          retention-days: 90
