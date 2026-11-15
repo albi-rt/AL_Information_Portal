@@ -5,7 +5,9 @@
 #    and the coverage report. Tests in the group "tsd-difference" check behaviour
 #    the TSD describes but the code does not have yet; they fail until it is built.
 # 2. The gate runs every other test. Any failure there fails the build.
-# 3. The run summary shows both counts and the coverage per file.
+# 3. The coverage check fails the build when less than 80% of the lines of
+#    inc/ and functions.php run during the tests.
+# 4. The run summary shows both counts and the coverage per file.
 # The reports are kept as the "unit-test-report" artifact of each run.
 
 name: Unit tests
@@ -44,6 +46,9 @@ jobs:
 
       - name: Gate (all tests except the open TSD differences)
         run: vendor/bin/phpunit --do-not-cache-result --exclude-group tsd-difference
+
+      - name: Coverage check (at least 80% of the theme code lines)
+        run: php tests/tools/coverage-by-file.php build/clover.xml --min=80
 
       - name: Summary
         if: always()

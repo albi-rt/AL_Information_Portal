@@ -100,7 +100,6 @@ final class ContactMantisTest extends TestCase {
 	}
 
 	/** Source: TSD 2.4, Help Desk interface (description keeps the full subject if cut). */
-	#[Group('tsd-difference')]
 	#[TestDox('A subject longer than 128 characters is kept in full in the description')]
 	public function test_description_keeps_full_long_subject(): void {
 		$subject     = str_repeat( 'Long subject ', 12 ); // 156 characters.
@@ -129,7 +128,6 @@ final class ContactMantisTest extends TestCase {
 	}
 
 	/** Source: TSD 2.4, Help Desk interface (Source Channel "Information Portal"). */
-	#[Group('tsd-difference')]
 	#[TestDox('The Source Channel of a website request is "Information Portal"')]
 	public function test_source_channel_is_information_portal(): void {
 		$fields = $this->fields_by_name( nsw_theme_contact_build_custom_fields( $this->request() ) );
@@ -149,7 +147,6 @@ final class ContactMantisTest extends TestCase {
 	}
 
 	/** Source: TSD 2.4, Help Desk interface (subject cut to 128 characters). */
-	#[Group('tsd-difference')]
 	#[TestDox('A subject longer than 128 characters is cut to 128 characters in the summary')]
 	public function test_summary_cut_to_128_characters(): void {
 		Functions\when( 'get_option' )->returnArg( 2 );
@@ -228,7 +225,6 @@ final class ContactMantisTest extends TestCase {
 	}
 
 	/** Source: TSD 2.4 and 2.5 (Help Desk token only in wp-config.php, not in the database). */
-	#[Group('tsd-difference')]
 	#[TestDox('The Help Desk token is never read from the database, only from wp-config.php')]
 	public function test_token_not_read_from_database(): void {
 		Functions\when( 'get_option' )->alias(

@@ -217,7 +217,6 @@ final class EnqueueTest extends TestCase {
 	}
 
 	/** Source: TSD 2.2.3, input validation and messages, Success: “Message sent”. */
-	#[Group('tsd-difference')]
 	#[TestDox('After a message is sent, the visitor sees the text "Message sent"')]
 	public function test_success_text_is_message_sent(): void {
 		$texts = $this->run_public_page()['i18n'];

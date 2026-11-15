@@ -455,7 +455,6 @@ final class I18nTest extends TestCase {
 	 * The TSD success text is "Message sent"; a closing full stop is accepted. The longer text
 	 * the browser shows today is a separate difference, checked with the browser texts.
 	 */
-	#[Group('tsd-difference')]
 	#[TestDox('The contact form confirmation "Message sent" is offered for translation into Albanian')]
 	public function test_contact_success_message_registered(): void {
 		$values = array_column( $this->run_string_registration( self::english_catalogue() ), 'value' );
@@ -466,7 +465,6 @@ final class I18nTest extends TestCase {
 	}
 
 	/** Source: TSD 2.2.3, Albanian and English "for all public pages, menus and interface texts". */
-	#[Group('tsd-difference')]
 	#[TestDox('The messages the contact form shows while sending and when something is wrong are offered for translation into Albanian')]
 	public function test_contact_form_messages_registered(): void {
 		$values   = array_column( $this->run_string_registration( self::english_catalogue() ), 'value' );

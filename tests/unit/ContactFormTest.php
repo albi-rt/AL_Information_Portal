@@ -478,7 +478,6 @@ final class ContactFormTest extends TestCase {
 	}
 
 	/** Source: TSD 2.2.3, privacy consent required ... Consent ... checked on the server; TSD 2.4.3, 400 missing ... fields. */
-	#[Group('tsd-difference')]
 	#[DataProvider('missing_consent')]
 	#[TestDox('A message with the privacy consent $label is refused (status 400) and no ticket is created')]
 	public function test_missing_consent_refused( string $label, ?string $value ): void {
@@ -913,7 +912,6 @@ final class ContactFormTest extends TestCase {
 	}
 
 	/** Source: TSD 2.4.2, Caller confirmation ... failure logged; TSD 2.6.2, The theme logs ... failed emails. */
-	#[Group('tsd-difference')]
 	#[TestDox('When the mail server does not accept the confirmation email, the failure is logged')]
 	public function test_confirmation_not_accepted_is_logged(): void {
 		$this->stub_wordpress();
@@ -957,7 +955,6 @@ final class ContactFormTest extends TestCase {
 	}
 
 	/** Source: TSD 2.6.2, The theme logs ... failed emails. */
-	#[Group('tsd-difference')]
 	#[TestDox('Without Help Desk settings, a failed email to the administrator is logged')]
 	public function test_fallback_email_failure_is_logged(): void {
 		$this->stub_wordpress();
@@ -980,7 +977,6 @@ final class ContactFormTest extends TestCase {
 	}
 
 	/** Source: TSD 2.2.3, Optional attachment: one file (pdf, doc, docx, jpg, jpeg, png) ... attachment type ... checked on the server. */
-	#[Group('tsd-difference')]
 	#[DataProvider('refused_types')]
 	#[TestDox('An attachment named $name is refused (status 400) and no ticket is created')]
 	public function test_attachment_of_wrong_type_refused( string $name ): void {
@@ -996,7 +992,6 @@ final class ContactFormTest extends TestCase {
 	}
 
 	/** Source: TSD 2.2.3, Optional attachment ... up to 10 MB ... size ... checked on the server. */
-	#[Group('tsd-difference')]
 	#[TestDox('An attachment one byte larger than 10 MB is refused (status 400) and no ticket is created')]
 	public function test_attachment_over_10_mb_refused(): void {
 		$this->stub_wordpress();
@@ -1006,6 +1001,32 @@ final class ContactFormTest extends TestCase {
 		$result = nsw_theme_handle_contact( $this->request_with_attachment( $files ) );
 
 		$this->assertInstanceOf( \WP_Error::class, $result, 'An attachment over 10 MB was accepted.' );
+		$this->assertSame( 400, $result->get_error_data()['status'] ?? null );
+		$this->assertSame( array(), $this->tickets );
+	}
+
+	/** Source: TSD 2.2.3, "Optional attachment: one file". */
+	#[TestDox('Two attachments sent with one message are refused (status 400) and no ticket is created')]
+	public function test_two_attachments_refused(): void {
+		$this->stub_wordpress();
+		$this->help_desk_configured();
+		$first  = $this->upload( 'first.pdf', 1024 );
+		$second = $this->upload( 'second.pdf', 1024 );
+		$files  = array(
+			'attachment' => array(
+				'name'     => array( $first['name'], $second['name'] ),
+				'type'     => array( $first['type'], $second['type'] ),
+				'tmp_name' => array( $first['tmp_name'], $second['tmp_name'] ),
+				'error'    => array( UPLOAD_ERR_OK, UPLOAD_ERR_OK ),
+				'size'     => array( $first['size'], $second['size'] ),
+			),
+		);
+		Functions\when( 'is_uploaded_file' )->justReturn( true );
+		$_FILES = $files;
+
+		$result = nsw_theme_handle_contact( $this->request( $this->fields(), 'valid-nonce', true, $files ) );
+
+		$this->assertInstanceOf( \WP_Error::class, $result, 'Two attachments were accepted.' );
 		$this->assertSame( 400, $result->get_error_data()['status'] ?? null );
 		$this->assertSame( array(), $this->tickets );
 	}
@@ -1022,7 +1043,6 @@ final class ContactFormTest extends TestCase {
 	}
 
 	/** Source: TSD 2.2.3, Optional attachment: one file (pdf, doc, docx, jpg, jpeg, png) ... forwarded; TSD 2.4.2, base64 in the files element. */
-	#[Group('tsd-difference')]
 	#[DataProvider('allowed_types')]
 	#[TestDox('A $type attachment is accepted and forwarded to the Help Desk with the ticket')]
 	public function test_allowed_attachment_forwarded( string $type ): void {
@@ -1043,7 +1063,6 @@ final class ContactFormTest extends TestCase {
 	}
 
 	/** Source: TSD 2.2.3, Optional attachment ... up to 10 MB, forwarded, not stored. */
-	#[Group('tsd-difference')]
 	#[TestDox('An attachment of exactly 10 MB is accepted and forwarded to the Help Desk with the ticket')]
 	public function test_attachment_of_exactly_10_mb_forwarded(): void {
 		$this->stub_wordpress();
@@ -1321,7 +1340,6 @@ final class ContactFormTest extends TestCase {
 	}
 
 	/** Source: TSD 2.4.2, Confirmation: caller name, NSWAL-<id>, subject, message; no response time; TSD 2.2.2, no response time. */
-	#[Group('tsd-difference')]
 	#[TestDox('The confirmation email promises no response time')]
 	public function test_confirmation_has_no_response_time(): void {
 		$this->stub_wordpress();
@@ -1616,7 +1634,6 @@ final class ContactFormTest extends TestCase {
 	}
 
 	/** Source: TSD 2.5.3, Secrets (... SMTP credentials) are only in wp-config.php, not in the database. */
-	#[Group('tsd-difference')]
 	#[TestDox('The mail server password is never taken from the database')]
 	public function test_smtp_password_not_read_from_database(): void {
 		Functions\when( 'get_option' )->alias(

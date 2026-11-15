@@ -1,12 +1,22 @@
 <?php
 /**
  * Prints line coverage per theme file from a Clover XML report.
- * Usage: php tests/tools/coverage-by-file.php build/clover.xml [path-filter]
+ * Usage: php tests/tools/coverage-by-file.php build/clover.xml [path-filter] [--min=80]
+ * With --min=N it exits with status 1 when the total line coverage is below N percent.
  */
 declare(strict_types=1);
 
-$clover = $argv[1] ?? 'build/clover.xml';
-$filter = $argv[2] ?? '';
+$args   = array_slice( $argv, 1 );
+$min    = null;
+foreach ( $args as $i => $arg ) {
+	if ( 0 === strpos( $arg, '--min=' ) ) {
+		$min = (float) substr( $arg, 6 );
+		unset( $args[ $i ] );
+	}
+}
+$args   = array_values( $args );
+$clover = $args[0] ?? 'build/clover.xml';
+$filter = $args[1] ?? '';
 $xml    = simplexml_load_file( $clover );
 if ( false === $xml ) {
 	fwrite( STDERR, "Cannot read $clover\n" );
@@ -42,4 +52,12 @@ foreach ( $xml->xpath( '//file' ) as $file ) {
 }
 sort( $rows );
 echo implode( "\n", $rows ), "\n";
-printf( "TOTAL %.1f%% (%d/%d lines)\n", $total_lines ? 100 * $total_hit / $total_lines : 100, $total_hit, $total_lines );
+$total_pct = $total_lines ? 100 * $total_hit / $total_lines : 100;
+printf( "TOTAL %.1f%% (%d/%d lines)\n", $total_pct, $total_hit, $total_lines );
+if ( null !== $min ) {
+	if ( $total_pct < $min ) {
+		printf( "FAIL: line coverage %.1f%% is below the minimum of %.1f%%\n", $total_pct, $min );
+		exit( 1 );
+	}
+	printf( "OK: line coverage %.1f%% meets the minimum of %.1f%%\n", $total_pct, $min );
+}

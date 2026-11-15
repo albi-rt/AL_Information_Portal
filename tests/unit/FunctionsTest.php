@@ -67,7 +67,6 @@ final class FunctionsTest extends TestCase {
 	 * the tag version"; wp-admin "shows the style.css version". SDP 2.3 itself notes that the
 	 * header "still says 0.10.0" today.
 	 */
-	#[Group('tsd-difference')]
 	#[TestDox('The theme version shown in WordPress is the same as the version in the addresses of the theme files')]
 	public function test_stylesheet_version_matches_theme_version(): void {
 		$this->assertSame( NSW_THEME_VERSION, self::stylesheet_version() );

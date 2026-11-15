@@ -728,7 +728,6 @@ final class RestApiTest extends TestCase {
 	}
 
 	/** Source: TSD 2.4.2, "other keys, including agency keys, are rejected (HTTP 400)". */
-	#[Group('tsd-difference')]
 	#[TestDox('News items accept no extra fields, the agency included')]
 	public function test_site_meta_news(): void {
 		$this->use_theme_meta_registry();
@@ -736,7 +735,6 @@ final class RestApiTest extends TestCase {
 	}
 
 	/** Source: TSD 2.4.2, "other keys, including agency keys, are rejected (HTTP 400)". */
-	#[Group('tsd-difference')]
 	#[TestDox('An agency sent with a new news item is refused as invalid input (status 400) and nothing is saved')]
 	public function test_site_agency_refused_on_new_news_item(): void {
 		$this->use_theme_meta_registry();
@@ -752,7 +750,6 @@ final class RestApiTest extends TestCase {
 	}
 
 	/** Source: TSD 2.5.2, "no agency can be set or changed through the REST or content API"; 2.4.2. */
-	#[Group('tsd-difference')]
 	#[TestDox('The agency of an existing news item cannot be changed through the content API (status 400)')]
 	public function test_site_agency_change_refused_on_news_item(): void {
 		$this->use_theme_meta_registry();
@@ -771,7 +768,6 @@ final class RestApiTest extends TestCase {
 	}
 
 	/** Source: TSD 2.4.2, "other keys, including agency keys, are rejected (HTTP 400)". */
-	#[Group('tsd-difference')]
 	#[TestDox('An agency sent with a new service guide is refused as invalid input (status 400) and nothing is saved')]
 	public function test_site_agency_refused_on_new_service_guide(): void {
 		$this->use_theme_meta_registry();
@@ -1410,7 +1406,6 @@ final class RestApiTest extends TestCase {
 	/* ------------------------------------------------- Application Passwords */
 
 	/** Source: TSD 2.5.1, Application Passwords for content API accounts, "only these accounts can have one". */
-	#[Group('tsd-difference')]
 	#[TestDox('An administrator account cannot have an Application Password')]
 	public function test_administrator_cannot_have_application_password(): void {
 		Functions\when( 'user_can' )->alias( static fn( $user, $cap ) => $user instanceof \WP_User && $user->has_cap( $cap ) );

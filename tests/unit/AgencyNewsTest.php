@@ -475,7 +475,6 @@ final class AgencyNewsTest extends TestCase {
 	}
 
 	/** Source: TSD 2.2.1, "No REST API can set or change the agency" (TSD 2.5.2: "no agency can be set or changed through the REST or content API"). */
-	#[Group('tsd-difference')]
 	#[RunInSeparateProcess]
 	#[PreserveGlobalState(false)]
 	#[TestDox('An Agency Officer cannot move a news item or service guide to another agency through the REST API')]
@@ -498,7 +497,6 @@ final class AgencyNewsTest extends TestCase {
 	}
 
 	/** Source: TSD 2.2.1, "No REST API can set or change the agency." */
-	#[Group('tsd-difference')]
 	#[RunInSeparateProcess]
 	#[PreserveGlobalState(false)]
 	#[TestDox('Not even an administrator can set the agency of an item through the REST API')]
@@ -642,7 +640,6 @@ final class AgencyNewsTest extends TestCase {
 	}
 
 	/** Source: TSD 2.2.3, "Albanian (default) and English for all public pages". */
-	#[Group('tsd-difference')]
 	#[RunInSeparateProcess]
 	#[PreserveGlobalState(false)]
 	#[TestDox('On an English page the agencies are listed under their English names')]
@@ -1381,7 +1378,6 @@ final class AgencyNewsTest extends TestCase {
 	}
 
 	/** Source: TSD 2.3.3, "an Agency Officer without one edits nothing" (TSD 2.5.2: "none without an assigned agency"). */
-	#[Group('tsd-difference')]
 	#[TestDox('An Agency Officer without an assigned agency cannot write a new item either')]
 	public function test_officer_without_agency_cannot_start_new_item(): void {
 		$this->sign_in( 'agency_officer', '' );
