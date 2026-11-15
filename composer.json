@@ -1,0 +1,18 @@
+{
+    "name": "nsw-al/information-portal",
+    "description": "NSW Albania Information Portal (WordPress theme nsw-theme). Composer is used only for the unit test tools; nothing here is deployed.",
+    "type": "project",
+    "license": "proprietary",
+    "require-dev": {
+        "brain/monkey": "^2.6",
+        "phpunit/phpunit": "^11.5"
+    },
+    "config": {
+        "sort-packages": true,
+        "platform": { "php": "8.2.0" }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:coverage": "phpunit --coverage-text --coverage-html build/coverage --coverage-clover build/clover.xml --log-junit build/junit.xml"
+    }
+}

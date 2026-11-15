@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/unit/bootstrap.php"
+         cacheDirectory=".phpunit.cache"
+         colors="true"
+         executionOrder="default"
+         beStrictAboutOutputDuringTests="true"
+         failOnRisky="true"
+         failOnWarning="true"
+         displayDetailsOnTestsThatTriggerWarnings="true"
+         displayDetailsOnTestsThatTriggerDeprecations="true">
+    <testsuites>
+        <testsuite name="Information Portal unit tests">
+            <directory suffix="Test.php">tests/unit</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory suffix=".php">wp-content/themes/nsw-theme/inc</directory>
+            <file>wp-content/themes/nsw-theme/functions.php</file>
+        </include>
+    </source>
+</phpunit>

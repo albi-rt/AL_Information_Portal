@@ -41,3 +41,8 @@ Thumbs.db
 .idea/
 .vscode/
 .claude/
+
+# === Unit test tools (dev only, never deployed) ===
+/vendor/
+/build/
+/.phpunit.cache/
